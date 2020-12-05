@@ -2,9 +2,9 @@
 
 This project includes a framework and some implementations for running a game server.
 
-- **Framework**: interfaces *Game* (definition of a game), *Player* (definition of a player), *PlayerConfiguration* (definitions for multiple players) and *GameManager* (allows running games with players).
-- **Tic Tac Toe** Example game implementation. Game for two players that place `O` or `X` alternatively on a 3x3 board.
-- **Tai Pan** Example game implementation. Trick-taking card game for four players playing in two teams.
+- [**Core framework**](./core): interfaces *Game* (definition of a game), *Player* (definition of a player), *PlayerConfiguration* (definitions for multiple players) and *GameManager* (allows running games with players).
+- [**Tic Tac Toe**](./tictactoe) Example game implementation. Game for two players that place `O` or `X` alternatively on a 3x3 board.
+- [**Tai Pan**](./taipan) Example game implementation. Trick-taking card game for four players playing in two teams.
 
 ### Getting started
 
