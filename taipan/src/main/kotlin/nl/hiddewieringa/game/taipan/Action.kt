@@ -8,8 +8,8 @@ sealed class TaiPanPlayerActions : PlayerActions
 data class CardPass(val left: Card, val forward: Card, val right: Card) : TaiPanPlayerActions() {
     init {
         require(left != forward) { "Left should not be the same card as forward" }
-        assert(forward != right) { "Right should not be the same card as forward" }
-        assert(left != right) { "Left should not be the same card as right" }
+        require(forward != right) { "Right should not be the same card as forward" }
+        require(left != right) { "Left should not be the same card as right" }
     }
 }
 
