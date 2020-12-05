@@ -52,42 +52,42 @@ class TaiPanTest {
                     )
                 )
                 assertNext(MahjongWishRequested(8))
-                assertNext(PlayerPasses(PLAYER3))
-                assertNext(PlayerPasses(PLAYER4))
-                assertNext(PlayerPasses(PLAYER1))
+                assertNext(PlayerFolds(PLAYER3))
+                assertNext(PlayerFolds(PLAYER4))
+                assertNext(PlayerFolds(PLAYER1))
                 assertNext(TrickWon(PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, PhoenixTriple(NumberedCard.QUEEN of Suit.HEARTS, NumberedCard.QUEEN of Suit.SPADES, Phoenix)))
-                assertNext(PlayerPasses(PLAYER3))
-                assertNext(PlayerPasses(PLAYER4))
-                assertNext(PlayerPasses(PLAYER1))
+                assertNext(PlayerFolds(PLAYER3))
+                assertNext(PlayerFolds(PLAYER4))
+                assertNext(PlayerFolds(PLAYER1))
                 assertNext(TrickWon(PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(2 of Suit.DIAMONDS)))
                 assertNext(PlayerPlayedCards(PLAYER3, HighCard(8 of Suit.CLUBS)))
                 assertNext(MahjongWishFulfilled)
-                assertNext(PlayerPasses(PLAYER4))
-                assertNext(PlayerPasses(PLAYER1))
+                assertNext(PlayerFolds(PLAYER4))
+                assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(9 of Suit.CLUBS)))
-                assertNext(PlayerPasses(PLAYER3))
-                assertNext(PlayerPasses(PLAYER4))
-                assertNext(PlayerPasses(PLAYER1))
+                assertNext(PlayerFolds(PLAYER3))
+                assertNext(PlayerFolds(PLAYER4))
+                assertNext(PlayerFolds(PLAYER1))
                 assertNext(TrickWon(PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(3 of Suit.DIAMONDS)))
-                assertNext(PlayerPasses(PLAYER3))
-                assertNext(PlayerPasses(PLAYER4))
-                assertNext(PlayerPasses(PLAYER1))
+                assertNext(PlayerFolds(PLAYER3))
+                assertNext(PlayerFolds(PLAYER4))
+                assertNext(PlayerFolds(PLAYER1))
                 assertNext(TrickWon(PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(10 of Suit.CLUBS)))
-                assertNext(PlayerPasses(PLAYER3))
-                assertNext(PlayerPasses(PLAYER4))
-                assertNext(PlayerPasses(PLAYER1))
+                assertNext(PlayerFolds(PLAYER3))
+                assertNext(PlayerFolds(PLAYER4))
+                assertNext(PlayerFolds(PLAYER1))
                 assertNext(TrickWon(PLAYER2))
 
                 assertNext(TrickBegan(PLAYER3))
@@ -103,58 +103,58 @@ class TaiPanTest {
                         FullHouse(NumberedTuple(8 of Suit.HEARTS, 8 of Suit.SPADES), NumberedTriple(6 of Suit.DIAMONDS, 6 of Suit.SPADES, 6 of Suit.CLUBS))
                     )
                 )
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(2 of Suit.SPADES)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(3 of Suit.SPADES)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(4 of Suit.DIAMONDS)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(9 of Suit.SPADES)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(10 of Suit.SPADES)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(NumberedCard.JACK of Suit.DIAMONDS)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, NumberedTriple(NumberedCard.KING of Suit.HEARTS, NumberedCard.KING of Suit.DIAMONDS, NumberedCard.KING of Suit.CLUBS)))
-                assertNext(PlayerPasses(PLAYER1))
-                assertNext(PlayerPasses(PLAYER2))
-                assertNext(PlayerPasses(PLAYER3))
+                assertNext(PlayerFolds(PLAYER1))
+                assertNext(PlayerFolds(PLAYER2))
+                assertNext(PlayerFolds(PLAYER3))
                 assertNext(TrickWon(PLAYER4))
 
                 assertNext(RoundEnded(1, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)))
@@ -209,13 +209,13 @@ class TaiPanTest {
                 )
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Pass)
+                playerGameChannel.send(PLAYER4 to Fold)
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER2, RequestPlayCards::class)
                 playerGameChannel.send(
@@ -229,13 +229,13 @@ class TaiPanTest {
                 )
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Pass)
+                playerGameChannel.send(PLAYER4 to Fold)
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER2, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER2 to PlayCards(setOf(2 of Suit.DIAMONDS)))
@@ -244,46 +244,46 @@ class TaiPanTest {
                 playerGameChannel.send(PLAYER3 to PlayCards(setOf(8 of Suit.CLUBS)))
 
                 assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Pass)
+                playerGameChannel.send(PLAYER4 to Fold)
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER2, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER2 to PlayCards(setOf(9 of Suit.CLUBS)))
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Pass)
+                playerGameChannel.send(PLAYER4 to Fold)
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER2, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER2 to PlayCards(setOf(3 of Suit.DIAMONDS)))
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Pass)
+                playerGameChannel.send(PLAYER4 to Fold)
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER2, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER2 to PlayCards(setOf(10 of Suit.CLUBS)))
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Pass)
+                playerGameChannel.send(PLAYER4 to Fold)
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
                 playerGameChannel.send(
@@ -312,73 +312,73 @@ class TaiPanTest {
                 )
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(2 of Suit.SPADES)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(3 of Suit.SPADES)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(4 of Suit.DIAMONDS)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(9 of Suit.SPADES)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(10 of Suit.SPADES)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(NumberedCard.JACK of Suit.DIAMONDS)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
 
                 assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(PLAYER4 to PlayCards(setOf(NumberedCard.KING of Suit.HEARTS, NumberedCard.KING of Suit.DIAMONDS, NumberedCard.KING of Suit.CLUBS)))
 
                 assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Pass)
+                playerGameChannel.send(PLAYER1 to Fold)
 
                 assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Pass)
+                playerGameChannel.send(PLAYER3 to Fold)
             }
 
             launch {

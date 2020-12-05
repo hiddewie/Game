@@ -15,7 +15,7 @@ data class RoundBegan(val roundIndex: Int) : TaiPanEvent()
 data class TrickBegan(val startingPlayer: TwoTeamPlayerId) : TaiPanEvent()
 
 data class PlayerPlayedCards(val player: TwoTeamPlayerId, val cards: CardCombination) : TaiPanEvent()
-data class PlayerPasses(val player: TwoTeamPlayerId) : TaiPanEvent()
+data class PlayerFolds(val player: TwoTeamPlayerId) : TaiPanEvent()
 data class TrickWon(val player: TwoTeamPlayerId) : TaiPanEvent()
 
 data class RoundEnded(val roundIndex: Int, val roundScore: Map<TwoTeamTeamId, Int>) : TaiPanEvent()

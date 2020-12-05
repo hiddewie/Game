@@ -18,7 +18,7 @@ data class PlayCards(val cards: CardSet, val addons: Set<PlayCardsAddon>) : TaiP
 }
 
 data class PassDragonTrick(val dragonPass: DragonPass) : TaiPanPlayerActions()
-object Pass : TaiPanPlayerActions()
+object Fold : TaiPanPlayerActions()
 object RequestNextCards : TaiPanPlayerActions()
 
 enum class DragonPass {

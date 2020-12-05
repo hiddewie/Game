@@ -96,7 +96,7 @@ class TaiPan(
         val passedCards = mutableMapOf<TwoTeamPlayerId, CardPass>()
         while (passedCards.size < 4) {
             val (playerId, pass) = receiveFromPlayer()
-            println("Player $playerId passed $pass")
+            println("Player $playerId passes $pass")
             when (pass) {
                 is CardPass -> when {
                     passedCards.containsKey(playerId) ->
@@ -214,7 +214,7 @@ class TaiPan(
 
         sendToAllPlayers(TrickBegan(trickPlayer))
         var currentPlayer = trickPlayer
-        var passes = 0
+        var folds = 0
 
         var lastPlayedCards = playInitialCards(currentPlayer, playerCards, mahjongWish, outOfCardsPlayers, taiPannedPlayers)
 
@@ -230,11 +230,11 @@ class TaiPan(
 
         currentPlayer = nextPlayer(currentPlayer)
 
-        while (passes < 3) {
+        while (folds < 3) {
             if (playerCards.getValue(currentPlayer).isEmpty()) {
-                println("Player $currentPlayer has no cards and passes")
-                passes++
-                sendToAllPlayers(PlayerPasses(currentPlayer))
+                println("Player $currentPlayer has no cards and folds")
+                folds++
+                sendToAllPlayers(PlayerFolds(currentPlayer))
             } else {
                 sendToPlayer(currentPlayer, RequestPlayCards)
                 while (true) {
@@ -270,7 +270,7 @@ class TaiPan(
                             trickCards.addAll(lastPlayedCards.cards)
                             playerCards.getValue(currentPlayer).removeAll(playedCombination.cards)
                             lastPlayedPlayer = currentPlayer
-                            passes = 0
+                            folds = 0
 
                             sendToAllPlayers(PlayerPlayedCards(currentPlayer, playedCombination))
 
@@ -286,15 +286,15 @@ class TaiPan(
 
                             break
                         }
-                        playerId == currentPlayer && cards is Pass -> {
+                        playerId == currentPlayer && cards is Fold -> {
                             if (mahjongWish.present && cardsContainWish(mahjongWish.value, lastPlayedCards, playerCards.getValue(currentPlayer))) {
                                 sendToPlayer(playerId, IllegalAction("Must play the Mahjong wish", cards))
                                 continue
                             }
 
-                            println("Player $currentPlayer passes")
-                            passes++
-                            sendToAllPlayers(PlayerPasses(currentPlayer))
+                            println("Player $currentPlayer folds")
+                            folds++
+                            sendToAllPlayers(PlayerFolds(currentPlayer))
                             break
                         }
                         playerId != currentPlayer && cards is PlayCards -> {
@@ -314,7 +314,7 @@ class TaiPan(
                                     trickCards.addAll(lastPlayedCards.cards)
                                     playerCards.getValue(playerId).removeAll(playedCombination.cards)
                                     lastPlayedPlayer = playerId
-                                    passes = 0
+                                    folds = 0
 
                                     sendToAllPlayers(PlayerPlayedCards(playerId, playedCombination))
 

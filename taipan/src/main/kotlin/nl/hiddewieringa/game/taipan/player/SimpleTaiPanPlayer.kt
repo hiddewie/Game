@@ -33,7 +33,7 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
                     is PlayerPlayedCards -> {
                         lastPlayedCards = event.cards
                     }
-                    is PlayerPasses -> {
+                    is PlayerFolds -> {
                     }
                     is TrickWon -> {
                     }
@@ -42,7 +42,7 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
                     RequestPassCards -> send(passCards())
                     RequestPlayCards -> {
                         val action: TaiPanPlayerActions = when (val cardsToPlay = play()) {
-                            null -> Pass
+                            null -> Fold
                             else -> PlayCards(cardsToPlay)
                         }
                         send(action)
@@ -68,7 +68,7 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
     }
 
     /**
-     * Passes in case of null
+     * Folds in case of null
      */
     private fun play(): CardSet? {
         // find first valid card combination to play
