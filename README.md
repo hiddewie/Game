@@ -22,8 +22,25 @@ Run the tests with `./gradlew test`.
 ### Future (not yet implemented)
 
 - Add backend web service to play games
-- Add frontend to allow users to play games
+  - Spring WebFlux with Coroutine support
+  - No authentication or authorization, URLs should be short lived and unguessable, UUIDs.
+  - A maximum number of active games.
+  - APIs:
+    - List of available games
+    - For a game:
+      - Open games
+      - Create a new game
+    - For a started game with enough players:
+      - Current game state (subscription query, SSE?)
+      - Player specific game state (subscription query, SSE?)
+  
+- Add frontend to allow users to play games.
+  - URLs:
+    - `/` Homepage, list of games
+    - `/{game}` Homepage of a game, active games, games waiting for players, button to join existing game or set up new game.
+    - `/{game}/{gameId}/join` Join an existing game, redirect to player page.
+    - `/{game}/{gameId}/{playerId}` The page specific page where the game can be played
 
-More detailed:
-- Games should manage some kind of state (game state and player specific state), and be more event driven internally, instead of imperative.
+- Improve Game library
+  - Games should manage some kind of state (game state and player specific state), and be more event driven internally, instead of imperative.
 
