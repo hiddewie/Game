@@ -34,7 +34,7 @@ tasks.withType<Test> {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
-        jvmTarget = "14"
+        jvmTarget = "11"
         freeCompilerArgs += listOf(
             "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi",
             "-Xuse-experimental=kotlin.time.ExperimentalTime",
