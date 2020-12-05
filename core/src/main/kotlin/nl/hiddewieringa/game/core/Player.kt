@@ -1,16 +1,14 @@
 package nl.hiddewieringa.game.core
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
 
-
 interface Player<
-        M : GameParameters,
-        E : Event,
-        A : PlayerActions,
-        R : GameResult,
-        > {
+    M : GameParameters,
+    E : Event,
+    A : PlayerActions,
+    R : GameResult,
+    > {
 
     /**
      * Initialize resources
@@ -28,7 +26,6 @@ interface Player<
      */
     fun gameEnded(result: R)
 }
-
 
 interface PlayerSpecific {
     val player: TwoTeamPlayerId

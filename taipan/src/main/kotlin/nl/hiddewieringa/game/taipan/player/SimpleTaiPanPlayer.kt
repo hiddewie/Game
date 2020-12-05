@@ -3,10 +3,10 @@ package nl.hiddewieringa.game.taipan.player
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
-import nl.hiddewieringa.game.taipan.TaiPanGameParameters
-import nl.hiddewieringa.game.taipan.TaiPanGameResult
 import nl.hiddewieringa.game.core.Player
 import nl.hiddewieringa.game.taipan.*
+import nl.hiddewieringa.game.taipan.TaiPanGameParameters
+import nl.hiddewieringa.game.taipan.TaiPanGameResult
 import nl.hiddewieringa.game.taipan.card.*
 
 typealias TaiPanPlayer = Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TaiPanGameResult>
@@ -73,12 +73,13 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
     private fun play(): CardSet? {
         // find first valid card combination to play
         return when (val stack = lastPlayedCards) {
-            is HighCard -> hand.firstOrNull {
-                it is Dragon ||
+            is HighCard ->
+                hand.firstOrNull {
+                    it is Dragon ||
                         (stack.card !is Dragon && it is Phoenix) ||
                         (it is NumberedCard && stack.card is NumberedCard && stack.card.value < it.value)
-            }
-                ?.let { setOf(it) }
+                }
+                    ?.let { setOf(it) }
             else -> null
         }
     }
@@ -91,5 +92,4 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
 
     override fun gameEnded(result: TaiPanGameResult) {
     }
-
 }

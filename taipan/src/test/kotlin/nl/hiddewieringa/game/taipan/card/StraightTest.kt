@@ -88,7 +88,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Mahjong
+                ),
+                Mahjong
             )
         )
         assertNotNull(
@@ -98,7 +99,8 @@ class StraightTest {
                     3 of HEARTS,
                     4 of CLUBS,
                     5 of DIAMONDS,
-                ), Mahjong
+                ),
+                Mahjong
             )
         )
     }
@@ -120,7 +122,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Mahjong
+                ),
+                Mahjong
             )
         }
     }
@@ -142,7 +145,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Phoenix, PhoenixValue(7)
+                ),
+                Phoenix, PhoenixValue(7)
             )
         )
         assertNotNull(
@@ -152,7 +156,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Phoenix, PhoenixValue(7)
+                ),
+                Phoenix, PhoenixValue(7)
             )
         )
     }
@@ -174,7 +179,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Phoenix, PhoenixValue(8)
+                ),
+                Phoenix, PhoenixValue(8)
             )
         }
         assertThrows<IllegalArgumentException> {
@@ -191,7 +197,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Phoenix, PhoenixValue(8)
+                ),
+                Phoenix, PhoenixValue(8)
             )
         }
     }
@@ -213,7 +220,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Mahjong, Phoenix, PhoenixValue(7)
+                ),
+                Mahjong, Phoenix, PhoenixValue(7)
             )
         )
         assertNotNull(
@@ -222,7 +230,8 @@ class StraightTest {
                     2 of DIAMONDS,
                     3 of HEARTS,
                     4 of CLUBS,
-                ), Mahjong, Phoenix, PhoenixValue(7)
+                ),
+                Mahjong, Phoenix, PhoenixValue(7)
             )
         )
     }
@@ -243,7 +252,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Mahjong, Phoenix, PhoenixValue(7)
+                ),
+                Mahjong, Phoenix, PhoenixValue(7)
             )
         }
         assertThrows<IllegalArgumentException> {
@@ -261,7 +271,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Mahjong, Phoenix, PhoenixValue(8)
+                ),
+                Mahjong, Phoenix, PhoenixValue(8)
             )
         }
         assertThrows<IllegalArgumentException> {
@@ -278,7 +289,8 @@ class StraightTest {
                     QUEEN of CLUBS,
                     KING of HEARTS,
                     ACE of DIAMONDS,
-                ), Mahjong, Phoenix, PhoenixValue(8)
+                ),
+                Mahjong, Phoenix, PhoenixValue(8)
             )
         }
     }

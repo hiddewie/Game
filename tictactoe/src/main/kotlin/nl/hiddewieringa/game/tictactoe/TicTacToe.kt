@@ -25,13 +25,16 @@ class TicTacToe : Game<
         board.all { it.all { value -> value != null } }
 
     private fun playerWon(location: Location, mark: GameMark): Boolean =
-        (board[location.x][0] == mark &&
+        (
+            board[location.x][0] == mark &&
                 board[location.x][1] == mark &&
-                board[location.x][2] == mark) ||
-                (board[0][location.y] == mark &&
-                        board[1][location.y] == mark &&
-                        board[2][location.y] == mark
-                        )
+                board[location.x][2] == mark
+            ) ||
+            (
+                board[0][location.y] == mark &&
+                    board[1][location.y] == mark &&
+                    board[2][location.y] == mark
+                )
 
     override suspend fun play(context: TicTacToeGameContext): TicTacToeGameResult {
 

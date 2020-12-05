@@ -198,7 +198,8 @@ fun findCardCombination(cards: CardSet, addons: Set<PlayCardsAddon>): CardCombin
                         2 -> numberedCards.filter { it.value == value }.let { cards -> NumberedTuple(cards[0], cards[1]) }
                         else -> throw IllegalStateException("Other counts than 1 and 2 should not be possible, found $count.")
                     }
-                })
+                }
+            )
             phoenix != null && numberedCards.size == 4 && numberedCardCounts.size == 2 -> {
                 when (numberedCardCounts.minOf { (_, count) -> count }) {
                     // 1 + 3 + Phoenix combination

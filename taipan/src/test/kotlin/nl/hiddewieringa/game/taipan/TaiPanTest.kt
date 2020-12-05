@@ -37,7 +37,8 @@ class TaiPanTest {
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(
                     PlayerPlayedCards(
-                        PLAYER2, MahjongStraight(
+                        PLAYER2,
+                        MahjongStraight(
                             setOf(
                                 2 of Suit.HEARTS,
                                 3 of Suit.HEARTS,
@@ -45,7 +46,8 @@ class TaiPanTest {
                                 5 of Suit.HEARTS,
                                 6 of Suit.HEARTS,
                                 7 of Suit.SPADES
-                            ), Mahjong
+                            ),
+                            Mahjong
                         )
                     )
                 )
@@ -201,7 +203,8 @@ class TaiPanTest {
                             5 of Suit.HEARTS,
                             6 of Suit.HEARTS,
                             7 of Suit.SPADES
-                        ), setOf(MahjongRequest(8))
+                        ),
+                        setOf(MahjongRequest(8))
                     )
                 )
 

@@ -410,8 +410,8 @@ class TaiPan(
                         continue
                     }
                     if (mahjongWish.present &&
-                        !cards.cards.filterIsInstance<NumberedCard>().any { it.value == mahjongWish.value }
-                        && cardsContainWish(mahjongWish.value, playerCards.getValue(currentPlayer))
+                        !cards.cards.filterIsInstance<NumberedCard>().any { it.value == mahjongWish.value } &&
+                        cardsContainWish(mahjongWish.value, playerCards.getValue(currentPlayer))
                     ) {
                         sendToPlayer(playerId, IllegalAction("Must play the Mahjong wish", cards))
                         continue
@@ -467,7 +467,8 @@ class TaiPan(
                 current is StraightBomb && previous.length < current.length
             is HighCard ->
                 current is HighCard && when (previous.card) {
-                    is NumberedCard -> current.card is Phoenix || current.card is Dragon ||
+                    is NumberedCard ->
+                        current.card is Phoenix || current.card is Dragon ||
                             (current.card is NumberedCard && previous.card.value < current.card.value)
                     is Phoenix -> current.card is Dragon
                     else -> false
@@ -540,7 +541,7 @@ class TaiPan(
         minValueWithPhoenixDown++
 
         return (maxValueWithPhoenixUp - minValue + 1 >= minLength) ||
-                (maxValue - minValueWithPhoenixDown + 1 >= minLength)
+            (maxValue - minValueWithPhoenixDown + 1 >= minLength)
     }
 
     private fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: Collection<Card>): Boolean {
@@ -554,15 +555,15 @@ class TaiPan(
             .withDefault { 0 }
 
         val hasWishBomb = cardValueCount.getValue(wish) == 4 ||
-                cards.filterIsInstance<NumberedCard>()
-                    .filter { it.value == wish }
-                    .map { it.suit }
-                    .any { suit ->
-                        val suitCards = cards
-                            .filterIsInstance<NumberedCard>()
-                            .filter { it.suit == suit }
-                        hasStraightOfLengthAndContainsValue(wish, 5, suitCards)
-                    }
+            cards.filterIsInstance<NumberedCard>()
+                .filter { it.value == wish }
+                .map { it.suit }
+                .any { suit ->
+                    val suitCards = cards
+                        .filterIsInstance<NumberedCard>()
+                        .filter { it.suit == suit }
+                    hasStraightOfLengthAndContainsValue(wish, 5, suitCards)
+                }
         val hasPhoenix = cards.any { it is Phoenix }
 
         return when (previousCards) {
@@ -586,38 +587,36 @@ class TaiPan(
                 hasWishBomb || (previousCards.value < wish && (cardValueCount.getValue(wish) >= 3 || cardValueCount.getValue(wish) == 2 && hasPhoenix))
             is FullHouse ->
                 hasWishBomb ||
-                        if (hasPhoenix) {
-                            (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 1 }.isNotEmpty()) ||
-                                    (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 2 }.isNotEmpty())
-                        } else {
-                            (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
-                                    (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 3 }.isNotEmpty())
-                        }
+                    if (hasPhoenix) {
+                        (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 1 }.isNotEmpty()) ||
+                            (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 2 }.isNotEmpty())
+                    } else {
+                        (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
+                            (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 3 }.isNotEmpty())
+                    }
             is TupleSequence ->
                 hasWishBomb ||
-                        if (hasPhoenix) {
-                            val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
-                            val hasOnlySingle = cardValueCount.filter { (_, count) -> count == 1 }.mapValues { true }.withDefault { false }
-                            ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
-                                val doubleCount = (value until (value + previousCards.length)).count { hasDouble.getValue(it) }
-                                val singleCount = (value until (value + previousCards.length)).count { hasOnlySingle.getValue(it) }
-                                doubleCount == previousCards.length || (doubleCount == previousCards.length - 1 && singleCount == 1)
-                            }
-                        } else {
-                            val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
-                            ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
-                                (value until (value + previousCards.length)).all { hasDouble.getValue(it) }
-                            }
+                    if (hasPhoenix) {
+                        val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
+                        val hasOnlySingle = cardValueCount.filter { (_, count) -> count == 1 }.mapValues { true }.withDefault { false }
+                        ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
+                            val doubleCount = (value until (value + previousCards.length)).count { hasDouble.getValue(it) }
+                            val singleCount = (value until (value + previousCards.length)).count { hasOnlySingle.getValue(it) }
+                            doubleCount == previousCards.length || (doubleCount == previousCards.length - 1 && singleCount == 1)
                         }
+                    } else {
+                        val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
+                        ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
+                            (value until (value + previousCards.length)).all { hasDouble.getValue(it) }
+                        }
+                    }
             is Straight ->
                 hasStraightOfLengthAndContainsValue(wish, previousCards.length, cards.filterIsInstance<NumberedCard>().filter { previousCards.minValue < it.value })
         }
     }
 }
 
-
 data class TaiPanGameParameters(val points: Int, val seed: Long) : GameParameters
-
 
 sealed class PlayCardsAddon
 data class PhoenixValue(val value: Int) : PlayCardsAddon() {
@@ -655,6 +654,3 @@ class MahjongWish {
 sealed class TaiPanGameResult : GameResult
 object Team1Won : TaiPanGameResult()
 object Team2Won : TaiPanGameResult()
-
-
-

@@ -1,6 +1,5 @@
 package nl.hiddewieringa.game.core
 
-
 interface PlayerId
 
 sealed class PlayerConfiguration<ID : PlayerId, P : Player<*, *, *, *>>(

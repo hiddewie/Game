@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.4.20"
+    id("org.jmailen.kotlinter") version "3.2.0"
 }
 
 repositories {
@@ -39,4 +40,10 @@ tasks.withType<KotlinCompile> {
             "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
         )
     }
+}
+
+kotlinter {
+    disabledRules = arrayOf(
+        "no-wildcard-imports"
+    )
 }

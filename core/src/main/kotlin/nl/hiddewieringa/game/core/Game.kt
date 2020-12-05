@@ -7,22 +7,17 @@ import kotlinx.coroutines.channels.SendChannel
  * Interface for a game that can be played by certain players.
  */
 interface Game<
-        M : GameParameters,
-        P : Player<M, E, A, R>,
-        A : PlayerActions,
-        E : Event,
-        R : GameResult,
-        PID : PlayerId,
-        PC : PlayerConfiguration<PID, P>> {
+    M : GameParameters,
+    P : Player<M, E, A, R>,
+    A : PlayerActions,
+    E : Event,
+    R : GameResult,
+    PID : PlayerId,
+    PC : PlayerConfiguration<PID, P>> {
     suspend fun play(context: GameContext<A, E, PID, PC>): R
 }
 
-class GameContext<
-        A : PlayerActions,
-        E : Event,
-        PID : PlayerId,
-        PC : PlayerConfiguration<PID, *>
-        >(
+class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, *>>(
     val players: PC,
     private val sendAllChannel: SendChannel<E>,
     private val playerChannel: SendChannel<Pair<PID, E>>,
@@ -39,7 +34,6 @@ class GameContext<
     suspend fun receiveFromPlayer(): Pair<PID, A> =
         playerActions.receive()
 }
-
 
 interface GameResult
 

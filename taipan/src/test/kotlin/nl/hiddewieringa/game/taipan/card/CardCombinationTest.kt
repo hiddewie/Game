@@ -138,5 +138,4 @@ class CardCombinationTest {
         assertNull(findCardCombination(setOf(6 of HEARTS, Dog), emptySet()))
         assertNull(findCardCombination(setOf(6 of HEARTS, Dragon), emptySet()))
     }
-
 }

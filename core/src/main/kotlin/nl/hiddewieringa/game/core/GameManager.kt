@@ -1,6 +1,5 @@
 package nl.hiddewieringa.game.core
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
@@ -12,7 +11,7 @@ import kotlinx.coroutines.launch
 class GameManager {
 
     suspend fun <M : GameParameters, P : Player<M, E, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>>
-            play(
+    play(
         gameFactory: (M) -> Game<M, P, A, E, R, PID, PC>,
         playerFactory: () -> PC,
         parameters: M
@@ -60,5 +59,4 @@ class GameManager {
             result
         }
     }
-
 }
