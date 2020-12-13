@@ -1,12 +1,14 @@
 
 rootProject.name = "game"
 
-// Core infrastructure
-include("core")
+include(
+    // Core infrastructure
+    "core",
 
-// Server
-include("server")
+    // Server
+    "server",
 
-// Game implementations
-include("tictactoe")
-include("taipan")
+    // Game implementations
+    "tictactoe",
+    "taipan"
+)

@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     id("org.jmailen.kotlinter")
+    `java-library`
 }
 
 repositories {
@@ -12,8 +13,6 @@ repositories {
 }
 
 dependencies {
-    implementation(project(":core"))
-
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
