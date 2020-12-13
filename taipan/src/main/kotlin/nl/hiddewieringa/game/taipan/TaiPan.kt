@@ -242,7 +242,7 @@ class TaiPan(
                     println("Player $playerId sent action $cards")
                     when {
                         playerId == currentPlayer && cards is PlayCards -> {
-                            val playedCombination = findCardCombination(cards.cards, cards.addons)
+                            val playedCombination = findCardCombination(lastPlayedCards, cards.cards, cards.addons)
 
                             println("Player $currentPlayer played cards $playedCombination")
 
@@ -298,7 +298,7 @@ class TaiPan(
                             break
                         }
                         playerId != currentPlayer && cards is PlayCards -> {
-                            val playedCombination = findCardCombination(cards.cards, cards.addons)
+                            val playedCombination = findCardCombination(lastPlayedCards, cards.cards, cards.addons)
                             if (!playerCards.getValue(playerId).containsAll(cards.cards)) {
                                 sendToPlayer(playerId, IllegalAction("Player does not have played cards", cards))
                                 continue
@@ -399,7 +399,7 @@ class TaiPan(
 
             when {
                 playerId == currentPlayer && cards is PlayCards -> {
-                    val playedStartingCards = findCardCombination(cards.cards, cards.addons)
+                    val playedStartingCards = findCardCombination(null, cards.cards, cards.addons)
 
                     if (!playerCards.getValue(playerId).containsAll(cards.cards)) {
                         sendToPlayer(playerId, IllegalAction("Player does not have played cards", cards))
@@ -460,29 +460,24 @@ class TaiPan(
         }
 
     private fun canCardsBePlayed(previous: CardCombination, current: CardCombination): Boolean {
+        val playedBomb = current is Bomb
         return when (previous) {
             is QuadrupleBomb ->
-                current is QuadrupleBomb && previous.value < current.value
+                (current is QuadrupleBomb && previous.value < current.value) || current is StraightBomb
             is StraightBomb ->
                 current is StraightBomb && previous.length < current.length
             is HighCard ->
-                current is HighCard && when (previous.card) {
-                    is NumberedCard ->
-                        current.card is Phoenix || current.card is Dragon ||
-                            (current.card is NumberedCard && previous.card.value < current.card.value)
-                    is Phoenix -> current.card is Dragon
-                    else -> false
-                }
+                current is Bomb || (current is HighCard && previous.value < current.value)
             is Tuple ->
-                current is Tuple && previous.value < current.value
+                playedBomb || (current is Tuple && previous.value < current.value)
             is Triple ->
-                current is Triple && previous.value < current.value
+                playedBomb || (current is Triple && previous.value < current.value)
             is TupleSequence ->
-                current is TupleSequence && previous.length == current.length && previous.minValue < current.minValue
+                playedBomb || (current is TupleSequence && previous.length == current.length && previous.minValue < current.minValue)
             is FullHouse ->
-                current is FullHouse && previous.triple.value < current.triple.value
+                playedBomb || (current is FullHouse && previous.triple.value < current.triple.value)
             is Straight ->
-                current is Straight && previous.length == current.length && previous.minValue < current.minValue
+                playedBomb || (current is Straight && previous.length == current.length && previous.minValue < current.minValue)
         }
     }
 
@@ -553,21 +548,24 @@ class TaiPan(
             .mapValues { (_, cards) -> cards.size }
             .withDefault { 0 }
 
-        val hasWishBomb = cardValueCount.getValue(wish) == 4 ||
-            cards.filterIsInstance<NumberedCard>()
-                .filter { it.value == wish }
-                .map { it.suit }
-                .any { suit ->
-                    val suitCards = cards
-                        .filterIsInstance<NumberedCard>()
-                        .filter { it.suit == suit }
-                    hasStraightOfLengthAndContainsValue(wish, 5, suitCards)
-                }
+        val hasWishQuadrupleBomb = cardValueCount.getValue(wish) == 4
+        val hasWishStraightBomb = cards.filterIsInstance<NumberedCard>()
+            .filter { it.value == wish }
+            .map { it.suit }
+            .any { suit ->
+                val suitCards = cards
+                    .filterIsInstance<NumberedCard>()
+                    .filter { it.suit == suit }
+                hasStraightOfLengthAndContainsValue(wish, 5, suitCards)
+            }
+        val hasWishBomb = hasWishQuadrupleBomb || hasWishStraightBomb
+
         val hasPhoenix = cards.any { it is Phoenix }
 
         return when (previousCards) {
             is QuadrupleBomb ->
-                previousCards.value < wish && cardValueCount.getValue(wish) == 4
+                hasWishStraightBomb ||
+                    (previousCards.value < wish && cardValueCount.getValue(wish) == 4)
             is StraightBomb ->
                 cards.filterIsInstance<NumberedCard>()
                     .filter { it.value == wish }
@@ -579,7 +577,7 @@ class TaiPan(
                         hasStraightOfLengthAndContainsValue(wish, previousCards.length + 1, suitCards)
                     }
             is HighCard ->
-                hasWishBomb || (previousCards.card is NumberedCard && previousCards.card.value < wish)
+                hasWishBomb || previousCards.value < wish.toFloat()
             is Tuple ->
                 hasWishBomb || (previousCards.value < wish && (cardValueCount.getValue(wish) >= 2 || cardValueCount.getValue(wish) == 1 && hasPhoenix))
             is Triple ->
@@ -588,6 +586,7 @@ class TaiPan(
                 hasWishBomb ||
                     if (hasPhoenix) {
                         (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 1 }.isNotEmpty()) ||
+                            (previousCards.value < wish && cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
                             (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 2 }.isNotEmpty())
                     } else {
                         (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
@@ -610,7 +609,8 @@ class TaiPan(
                         }
                     }
             is Straight ->
-                hasStraightOfLengthAndContainsValue(wish, previousCards.length, cards.filterIsInstance<NumberedCard>().filter { previousCards.minValue < it.value })
+                hasWishBomb ||
+                    hasStraightOfLengthAndContainsValue(wish, previousCards.length, cards.filterIsInstance<NumberedCard>().filter { previousCards.minValue < it.value } + cards.filterIsInstance<Phoenix>())
         }
     }
 }

@@ -2,6 +2,7 @@ package nl.hiddewieringa.game.taipan.card
 
 import nl.hiddewieringa.game.taipan.PhoenixValue
 import nl.hiddewieringa.game.taipan.PlayCardsAddon
+import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.ACE
 
 sealed class CardCombination(
     val cards: CardSet
@@ -10,7 +11,12 @@ sealed class CardCombination(
         cards.any { it == card }
 }
 
-data class HighCard(val card: Card) : CardCombination(setOf(card))
+data class HighCard(val card: Card, val value: Float) : CardCombination(setOf(card)) {
+    constructor(card: Dragon) : this(card, card.value.toFloat())
+    constructor(card: Dog) : this(card, card.value.toFloat())
+    constructor(card: Mahjong) : this(card, card.value.toFloat())
+    constructor(card: NumberedCard) : this(card, card.value.toFloat())
+}
 
 sealed class Tuple(cards: CardSet, val value: Int) : CardCombination(cards)
 data class NumberedTuple(val card1: NumberedCard, val card2: NumberedCard) : Tuple(setOf(card1, card2), card1.value) {
@@ -156,7 +162,7 @@ data class StraightBomb(val bombCards: Set<NumberedCard>) : Bomb(bombCards) {
     }
 }
 
-fun findCardCombination(cards: CardSet, addons: Set<PlayCardsAddon>): CardCombination? {
+fun findCardCombination(lastPlayedCards: CardCombination?, cards: CardSet, addons: Set<PlayCardsAddon>): CardCombination? {
     val sortedCards = cards.sortedWith(Comparator.naturalOrder())
 
     val phoenix: Phoenix? = sortedCards.filterIsInstance<Phoenix>().firstOrNull()
@@ -183,7 +189,10 @@ fun findCardCombination(cards: CardSet, addons: Set<PlayCardsAddon>): CardCombin
             mahjong != null && numberedCards.size == sortedCards.size - 1 -> MahjongStraight(numberedCards.toSet(), mahjong)
             mahjong != null -> null
 
-            phoenix != null && sortedCards.size == 1 -> HighCard(phoenix)
+            phoenix != null && sortedCards.size == 1 -> when (lastPlayedCards) {
+                is HighCard -> HighCard(phoenix, lastPlayedCards.value + 0.5f)
+                else -> HighCard(phoenix, 1.5f)
+            }
             phoenix != null && sortedCards.size == 2 -> PhoenixTuple(numberedCards[0], phoenix)
             phoenix != null && sortedCards.size == 3 -> PhoenixTriple(numberedCards[0], numberedCards[1], phoenix)
             phoenix != null && numberedCards.size >= 4 && phoenixValue != null && numberedCardCounts.all { (_, count) -> count == 1 } -> PhoenixStraight(

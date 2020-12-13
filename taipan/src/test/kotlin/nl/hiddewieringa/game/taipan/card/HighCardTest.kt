@@ -11,7 +11,7 @@ class HighCardTest {
         assertNotNull(HighCard(Dog))
         assertNotNull(HighCard(Mahjong))
         assertNotNull(HighCard(Dragon))
-        assertNotNull(HighCard(Phoenix))
+        assertNotNull(HighCard(Phoenix, 10.5f))
         assertNotNull(HighCard(10 of HEARTS))
     }
 }

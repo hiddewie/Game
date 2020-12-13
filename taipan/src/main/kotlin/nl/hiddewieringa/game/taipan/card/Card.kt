@@ -1,5 +1,7 @@
 package nl.hiddewieringa.game.taipan.card
 
+import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.ACE
+
 sealed class Card(
     val points: Int
 ) : Comparable<Card> {
@@ -84,6 +86,8 @@ data class NumberedCard(val suit: Suit, val value: Int) : Card(
 object Dragon : Card(25) {
     override fun toString(): String =
         "\uD83D\uDC09"
+
+    const val value = ACE + 1
 }
 
 object Phoenix : Card(-25) {
@@ -94,9 +98,13 @@ object Phoenix : Card(-25) {
 object Dog : Card(0) {
     override fun toString(): String =
         "\uD83D\uDC15"
+
+    const val value = 0
 }
 
 object Mahjong : Card(0) {
     override fun toString(): String =
         "1️⃣"
+
+    const val value = 1
 }

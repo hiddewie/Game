@@ -37,9 +37,10 @@ class MahjongWishTest {
     fun cardsContainWishHighCard() {
         val game = TaiPan(TaiPanGameParameters(0, 0))
         assertTrue(game.cardsContainWish(6, HighCard(5 of HEARTS), setOf(6 of HEARTS)))
-// TODO       assertTrue(game.cardsContainWish(6, HighCard(Phoenix), setOf(6 of HEARTS)))
-// TODO       assertTrue(game.cardsContainWish(6, HighCard(Mahjong), setOf(6 of HEARTS)))
+        assertTrue(game.cardsContainWish(6, HighCard(Phoenix, 1.5f), setOf(6 of HEARTS)))
+        assertTrue(game.cardsContainWish(6, HighCard(Mahjong), setOf(6 of HEARTS)))
 
+        assertFalse(game.cardsContainWish(6, HighCard(Phoenix, 6.5f), setOf(6 of HEARTS)))
         assertFalse(game.cardsContainWish(6, HighCard(5 of HEARTS), setOf(7 of HEARTS)))
         assertFalse(game.cardsContainWish(3, HighCard(5 of HEARTS), setOf(3 of HEARTS)))
         assertFalse(game.cardsContainWish(3, HighCard(Dragon), setOf(3 of HEARTS)))
@@ -79,7 +80,7 @@ class MahjongWishTest {
         val game = TaiPan(TaiPanGameParameters(0, 0))
         val fullHouse = FullHouse(NumberedTuple(2 of HEARTS, 2 of DIAMONDS), NumberedTriple(5 of HEARTS, 5 of DIAMONDS, 5 of SPADES))
         assertTrue(game.cardsContainWish(6, fullHouse, setOf(6 of HEARTS, 6 of DIAMONDS, 6 of SPADES, 3 of HEARTS, 3 of DIAMONDS)))
-// TODO         assertTrue(game.cardsContainWish(6, fullHouse, setOf(6 of HEARTS, 6 of DIAMONDS, Phoenix, 3 of HEARTS, 3 of DIAMONDS)))
+        assertTrue(game.cardsContainWish(6, fullHouse, setOf(6 of HEARTS, 6 of DIAMONDS, Phoenix, 3 of HEARTS, 3 of DIAMONDS)))
         assertTrue(game.cardsContainWish(2, fullHouse, setOf(2 of HEARTS, 2 of DIAMONDS, 2 of SPADES, 2 of CLUBS)))
         assertTrue(game.cardsContainWish(2, fullHouse, setOf(2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS)))
 
@@ -113,11 +114,11 @@ class MahjongWishTest {
         val game = TaiPan(TaiPanGameParameters(0, 0))
         val straight = NumberedStraight(setOf(3 of HEARTS, 4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, 7 of SPADES))
         assertTrue(game.cardsContainWish(6, straight, setOf(4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, 7 of SPADES, 8 of SPADES)))
-        // TODO         assertTrue(game.cardsContainWish(6, straight, setOf(4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, 7 of SPADES, Phoenix)))
-        // TODO        assertTrue(game.cardsContainWish(6, straight, setOf(4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, Phoenix, 8 of SPADES)))
+        assertTrue(game.cardsContainWish(6, straight, setOf(4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, 7 of SPADES, Phoenix)))
+        assertTrue(game.cardsContainWish(6, straight, setOf(4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, Phoenix, 8 of SPADES)))
         assertTrue(game.cardsContainWish(6, straight, setOf(2 of DIAMONDS, 3 of DIAMONDS, 4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, 7 of SPADES, 8 of SPADES)))
-        // TODO   assertTrue(game.cardsContainWish(2, straight, setOf(2 of HEARTS, 2 of DIAMONDS, 2 of SPADES, 2 of CLUBS)))
-        // TODO     assertTrue(game.cardsContainWish(2, straight, setOf(2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS)))
+        assertTrue(game.cardsContainWish(2, straight, setOf(2 of HEARTS, 2 of DIAMONDS, 2 of SPADES, 2 of CLUBS)))
+        assertTrue(game.cardsContainWish(2, straight, setOf(2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS)))
 
         assertFalse(game.cardsContainWish(6, straight, setOf(3 of HEARTS, 4 of HEARTS, 5 of SPADES, 6 of DIAMONDS, 7 of SPADES)))
         assertFalse(game.cardsContainWish(6, straight, setOf(5 of SPADES, 6 of DIAMONDS, 7 of SPADES, 8 of SPADES)))
@@ -132,27 +133,26 @@ class MahjongWishTest {
         val game = TaiPan(TaiPanGameParameters(0, 0))
         val straightBomb = StraightBomb(setOf(3 of DIAMONDS, 4 of DIAMONDS, 5 of DIAMONDS, 6 of DIAMONDS, 7 of DIAMONDS, 8 of DIAMONDS))
 
-//TODO        assertTrue(game.cardsContainWish(6, straightBomb, setOf(4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS)))
+        assertTrue(game.cardsContainWish(6, straightBomb, setOf(4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS, 10 of HEARTS)))
         assertTrue(game.cardsContainWish(6, straightBomb, setOf(2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS)))
 
         assertFalse(game.cardsContainWish(2, straightBomb, setOf(2 of DIAMONDS, 2 of HEARTS, 2 of SPADES, 2 of CLUBS)))
         assertFalse(game.cardsContainWish(6, straightBomb, setOf(4 of DIAMONDS, 5 of DIAMONDS, 6 of DIAMONDS, 7 of DIAMONDS, Phoenix, 9 of DIAMONDS)))
         assertFalse(game.cardsContainWish(6, straightBomb, setOf(9 of HEARTS, 10 of HEARTS, JACK of HEARTS, QUEEN of HEARTS, ACE of HEARTS)))
         assertFalse(game.cardsContainWish(6, straightBomb, setOf(3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS)))
-        assertFalse(game.cardsContainWish(6, straightBomb, setOf( 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS)))
+        assertFalse(game.cardsContainWish(6, straightBomb, setOf(5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS)))
         assertFalse(game.cardsContainWish(5, straightBomb, setOf(Mahjong, 2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS)))
 
         val quadrupleBomb = QuadrupleBomb(setOf(3 of HEARTS, 3 of DIAMONDS, 3 of SPADES, 3 of CLUBS))
 
         assertTrue(game.cardsContainWish(4, quadrupleBomb, setOf(4 of DIAMONDS, 4 of HEARTS, 4 of SPADES, 4 of CLUBS)))
-// TODO        assertTrue(game.cardsContainWish(6, quadrupleBomb, setOf(4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS)))
-// TODO        assertTrue(game.cardsContainWish(6, quadrupleBomb, setOf(2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS)))
+        assertTrue(game.cardsContainWish(6, quadrupleBomb, setOf(4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS)))
+        assertTrue(game.cardsContainWish(6, quadrupleBomb, setOf(2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS)))
+        assertTrue(game.cardsContainWish(6, quadrupleBomb, setOf(3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS)))
 
         assertFalse(game.cardsContainWish(2, quadrupleBomb, setOf(2 of DIAMONDS, 2 of HEARTS, 2 of SPADES, 2 of CLUBS)))
         assertFalse(game.cardsContainWish(6, quadrupleBomb, setOf(4 of DIAMONDS, 5 of DIAMONDS, 6 of DIAMONDS, 7 of DIAMONDS, Phoenix, 9 of DIAMONDS)))
         assertFalse(game.cardsContainWish(6, quadrupleBomb, setOf(9 of HEARTS, 10 of HEARTS, JACK of HEARTS, QUEEN of HEARTS, ACE of HEARTS)))
-        assertFalse(game.cardsContainWish(6, quadrupleBomb, setOf(3 of HEARTS, 4 of HEARTS, 5 of HEARTS, 6 of HEARTS, 7 of HEARTS)))
-        assertFalse(game.cardsContainWish(6, quadrupleBomb, setOf( 5 of HEARTS, 6 of HEARTS, 7 of HEARTS, 8 of HEARTS, 9 of HEARTS)))
         assertFalse(game.cardsContainWish(5, quadrupleBomb, setOf(Mahjong, 2 of HEARTS, 3 of HEARTS, 4 of HEARTS, 5 of HEARTS)))
     }
 }
