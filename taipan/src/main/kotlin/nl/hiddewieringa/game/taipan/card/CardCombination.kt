@@ -2,7 +2,6 @@ package nl.hiddewieringa.game.taipan.card
 
 import nl.hiddewieringa.game.taipan.PhoenixValue
 import nl.hiddewieringa.game.taipan.PlayCardsAddon
-import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.ACE
 
 sealed class CardCombination(
     val cards: CardSet

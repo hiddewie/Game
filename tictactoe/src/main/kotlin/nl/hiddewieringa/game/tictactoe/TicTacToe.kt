@@ -6,14 +6,14 @@ import nl.hiddewieringa.game.core.*
 typealias TicTacToeGameContext = GameContext<TicTacToePlayerActions, TicTacToeEvent, TwoPlayerId, TwoPlayers<TicTacToePlayer>>
 
 class TicTacToe : Game<
-        TicTacToeGameParameters,
-        TicTacToePlayer,
-        TicTacToePlayerActions,
-        TicTacToeEvent,
-        TicTacToeGameResult,
-        TwoPlayerId,
-        TwoPlayers<TicTacToePlayer>
-        > {
+    TicTacToeGameParameters,
+    TicTacToePlayer,
+    TicTacToePlayerActions,
+    TicTacToeEvent,
+    TicTacToeGameResult,
+    TwoPlayerId,
+    TwoPlayers<TicTacToePlayer>
+    > {
 
     private val board: Array<Array<GameMark?>> = arrayOf(
         arrayOf(null, null, null),

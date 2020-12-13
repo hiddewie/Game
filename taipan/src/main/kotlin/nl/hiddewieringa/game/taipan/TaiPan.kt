@@ -10,14 +10,14 @@ typealias TaiPanGameContext = GameContext<TaiPanPlayerActions, TaiPanEvent, TwoT
 class TaiPan(
     private val parameters: TaiPanGameParameters
 ) : Game<
-        TaiPanGameParameters,
-        TaiPanPlayer,
-        TaiPanPlayerActions,
-        TaiPanEvent,
-        TaiPanGameResult,
-        TwoTeamPlayerId,
-        TwoTeams<TaiPanPlayer>
-        > {
+    TaiPanGameParameters,
+    TaiPanPlayer,
+    TaiPanPlayerActions,
+    TaiPanEvent,
+    TaiPanGameResult,
+    TwoTeamPlayerId,
+    TwoTeams<TaiPanPlayer>
+    > {
 
     override suspend fun play(context: TaiPanGameContext): TaiPanGameResult {
 
