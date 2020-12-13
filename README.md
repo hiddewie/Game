@@ -5,6 +5,7 @@ This project includes a framework and some implementations for running a game se
 - [**Core framework**](./core): interfaces *Game* (definition of a game), *Player* (definition of a player), *PlayerConfiguration* (definitions for multiple players) and *GameManager* (allows running games with players).
 - [**Tic Tac Toe**](./tictactoe) Example game implementation. Game for two players that place `O` or `X` alternatively on a 3x3 board.
 - [**Tai Pan**](./taipan) Example game implementation. Trick-taking card game for four players playing in two teams.
+- [**Server**](./server) The web service that is the backend for playing games.
 
 ### Getting started
 
@@ -18,11 +19,12 @@ Run the tests with `./gradlew test`.
 - Run a game with a player composition
 - Basic implementation for TicTacToe game
 - Basic implementation for Tai Pan game
+- Basic implementation of a game server that users can interact with
 
 ### Future (not yet implemented)
 
-- Add backend web service to play games
-  - Spring WebFlux with Coroutine support
+- ~~Add backend web service to play games~~
+  - ~~Spring WebFlux with Coroutine support~~
   - No authentication or authorization, URLs should be short lived and unguessable, UUIDs.
   - A maximum number of active games.
   - APIs:
