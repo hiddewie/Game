@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("common-kotlin")
+    id("kotlin-library")
 }
 
 dependencies {

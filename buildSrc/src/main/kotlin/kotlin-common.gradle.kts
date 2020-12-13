@@ -1,3 +1,4 @@
+import org.gradle.api.JavaVersion
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -5,7 +6,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm")
     id("org.jmailen.kotlinter")
-    `java-library`
 }
 
 repositories {
@@ -19,6 +19,8 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.7.0")
 }
+
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 tasks.withType<Test> {
     useJUnitPlatform()
