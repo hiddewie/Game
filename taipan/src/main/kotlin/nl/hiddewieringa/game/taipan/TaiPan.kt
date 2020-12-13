@@ -490,8 +490,7 @@ class TaiPan(
         cards.filterIsInstance<NumberedCard>()
             .any { it.value == wish }
 
-    // TODO unit test the shit out of this
-    private fun hasStraightOfLengthAndContainsValue(value: Int, minLength: Int, cards: Collection<Card>): Boolean {
+    internal fun hasStraightOfLengthAndContainsValue(value: Int, minLength: Int, cards: Collection<Card>): Boolean {
         val hasValue = cards.filterIsInstance<NumberedCard>()
             .groupBy { it.value }
             .mapValues { true }
@@ -544,7 +543,7 @@ class TaiPan(
             (maxValue - minValueWithPhoenixDown + 1 >= minLength)
     }
 
-    private fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: Collection<Card>): Boolean {
+    internal fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: Collection<Card>): Boolean {
         if (!cardsContainWish(wish, cards)) {
             return false
         }
