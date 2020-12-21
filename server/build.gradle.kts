@@ -18,8 +18,9 @@ group = "nl.hiddewieringa.game"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-rsocket")
+//    implementation("org.springframework.boot:spring-boot-starter-rsocket")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
+//    implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
@@ -35,4 +36,8 @@ tasks.withType<KotlinCompile> {
             "-Xjsr305=strict"
         )
     }
+}
+
+application {
+    mainClass.set("nl.hiddewieringa.game.server.GameServerApplicationKt")
 }
