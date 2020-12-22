@@ -33,13 +33,19 @@ function App(props) {
     return <p>{error}</p>
   }
 
+  const listItems = (<ul>
+    {items.map(item => (<li>
+      <ul>
+      {item.playerSlotIds.map(playerSlotId => <li><Link to={`/play/${gameId}/${item.id}/${playerSlotId}`}>{item.id} &mdash; {playerSlotId}</Link></li>)}
+    </ul>
+    </li>))}
+  </ul>)
+
   return (<div>
     <p>
       loaded: {isLoaded ? 'true' : 'false'}
     </p>
-    <ul>
-      {items.map(item => <li><Link to={`/play/${gameId}/${item.id}`}>{item.id}</Link></li>)}
-    </ul>
+    {listItems}
     <button onClick={startGame}>
       START
     </button>

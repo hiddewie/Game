@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 
 class GameManager {
 
+    // TODO maybe refactor factories to simple parameter passing?
     suspend fun <M : GameParameters, P : Player<M, E, S, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState>
     play(
         gameFactory: (M) -> Game<M, P, A, E, R, PID, PC, S>,

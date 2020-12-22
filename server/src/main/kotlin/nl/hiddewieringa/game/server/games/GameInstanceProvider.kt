@@ -23,8 +23,9 @@ class GameInstance(
     val open: Boolean,
 //   TODO  val game: Game
 
-    // TODO make map of UUID to player slots (for connecting to certain player
-    val playerSlots: List<PlayerSlots>,
+    val playerSlots: Map<UUID, PlayerSlots>,
+    // TODO generify
+    val stateProvider: () -> TicTacToeState,
 )
 
 class WebsocketPlayer : TicTacToePlayer {
@@ -61,6 +62,7 @@ class GameInstanceProvider(
     suspend fun startGame(gameId: UUID): UUID {
         val instanceId = UUID.randomUUID()
 
+        val game = TicTacToe()
         val players: TwoPlayers<TicTacToePlayer> = TwoPlayers(
             WebsocketPlayer(),
             WebsocketPlayer()
@@ -72,30 +74,32 @@ class GameInstanceProvider(
         GlobalScope.async(threadPoolDispatcher) {
             // TODO replace with actual game
 
-            GameManager().play(
-                { TicTacToe() },
+            val gameResult = GameManager().play(
+                { game },
                 { players },
                 TicTacToeGameParameters
             )
+
+            // TODO store game result
+            println("Game result of $instanceId: $gameResult")
         }
 
-        // TODO store job, and for interaction with game by connecting later
-        //   and blocking events!
         instances[instanceId] = GameInstance(
             instanceId,
             gameId,
             true,
             // TODO make generic
-            listOf(
-                PlayerSlots(
+            mapOf(
+                UUID.randomUUID() to PlayerSlots(
                     (players.player1 as WebsocketPlayer).actionChannel,
                     (players.player1 as WebsocketPlayer).eventChannel,
                 ),
-                PlayerSlots(
+                UUID.randomUUID() to PlayerSlots(
                     (players.player2 as WebsocketPlayer).actionChannel,
                     (players.player2 as WebsocketPlayer).eventChannel,
                 ),
-            )
+            ),
+            game::state,
         )
 
         return instanceId

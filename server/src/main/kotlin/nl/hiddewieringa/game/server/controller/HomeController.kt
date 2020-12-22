@@ -32,6 +32,7 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriTemplate
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
 
@@ -45,9 +46,12 @@ class HomeController(
     fun games(): List<GameDetails> =
         gameProvider.games()
 
+    data class OpenGame(val id: UUID, val playerSlotIds: Set<UUID>)
+
     @GetMapping("games/{gameId}/open")
-    fun openGames(@PathVariable gameId: UUID): List<GameInstance> =
+    fun openGames(@PathVariable gameId: UUID): List<OpenGame> =
         gameInstanceProvider.openGames(gameId)
+            .map { OpenGame(it.id, it.playerSlots.keys) }
 
     @GetMapping("games/{gameId}/instance/{instanceId}")
     fun instanceDetails(@PathVariable gameId: UUID, @PathVariable instanceId: UUID): GameInstance? =
@@ -63,8 +67,9 @@ class ReactiveWebSocketHandler(
     val gameInstanceProvider: GameInstanceProvider,
 ) : WebSocketHandler {
 
-    private val template = UriTemplate("/interaction/{instanceId}")
+    private val template = UriTemplate(URI_TEMPLATE)
 
+    // TODO make generic
     private val typeValidator = BasicPolymorphicTypeValidator.builder()
         .allowIfBaseType(TicTacToeEvent::class.java)
         .allowIfSubType(TicTacToeEvent::class.java)
@@ -76,12 +81,16 @@ class ReactiveWebSocketHandler(
         .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type")
 
     data class WrappedAction<T : PlayerActions>(val action: T)
-    data class WrappedEvent<T : Event, S : GameState>(val event: T, val state: S)
+    data class WrappedEvent<T : Event, S : GameState>(val event: T?, val state: S)
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val instanceId: UUID = UUID.fromString(template.match(session.handshakeInfo.uri.path)["instanceId"])
+        val playerSlotId: UUID = UUID.fromString(template.match(session.handshakeInfo.uri.path)["playerSlotId"])
 
-        val playerSlots = gameInstanceProvider.gameInstance(instanceId)?.playerSlots?.get(0)
+        println("player slot $playerSlotId")
+
+        val gameInstance = gameInstanceProvider.gameInstance(instanceId)
+        val playerSlots = gameInstance?.playerSlots?.get(playerSlotId)
             ?: return Mono.empty()
 
         // TODO: other scope?
@@ -93,10 +102,16 @@ class ReactiveWebSocketHandler(
                 .collect { playerSlots.sendChannel.send(objectMapper.readValue<WrappedAction<TicTacToePlayerActions>>(it.payloadAsText).action) }
         }
 
-        val output = playerSlots.receiveChannel.receiveAsFlow().asFlux()
+        println(WrappedEvent(null, gameInstance.stateProvider()))
+        val initialState = Flux.just(session.textMessage(objectMapper.writeValueAsString(WrappedEvent(null, gameInstance.stateProvider()))) )
+        val events = playerSlots.receiveChannel.receiveAsFlow().asFlux()
             .map { session.textMessage(objectMapper.writeValueAsString(WrappedEvent(it.first, it.second))) }
 
-        return session.send(output)
+        return session.send(initialState.concatWith(events))
+    }
+
+    companion object {
+        const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"
     }
 }
 
@@ -107,7 +122,7 @@ class WebsocketConfiguration {
     fun webSocketHandlerMapping(webSocketHandler: WebSocketHandler): HandlerMapping =
         SimpleUrlHandlerMapping(
             mapOf(
-                "/interaction/{instanceId}" to webSocketHandler,
+                ReactiveWebSocketHandler.URI_TEMPLATE to webSocketHandler,
             ),
             1
         )
