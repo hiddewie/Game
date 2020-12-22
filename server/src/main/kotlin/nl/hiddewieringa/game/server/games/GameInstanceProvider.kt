@@ -4,24 +4,43 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.launch
+import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
+
+private val logger = KotlinLogging.logger {}
 
 class PlayerSlots<A : PlayerActions, E : Event, S : GameState>(
     val sendChannel: SendChannel<A>,
     val receiveChannel: ReceiveChannel<Pair<E, S>>,
-)
+) {
+
+    var referenceCount = AtomicInteger()
+
+    fun increaseReference() {
+        referenceCount.incrementAndGet()
+        logger.info("player slot ${referenceCount.get()}")
+    }
+
+    fun decreaseReference() {
+        referenceCount.decrementAndGet()
+        logger.info("player slot ${referenceCount.get()}")
+    }
+}
 
 class GameInstance<A : PlayerActions, E : Event, S : GameState>(
     val id: UUID,
-    val gameId: UUID,
-    val open: Boolean,
+    val gameSlug: String,
     val playerSlots: Map<UUID, PlayerSlots<A, E, S>>,
     val stateProvider: () -> S,
 //    val actionClass: Class<A>,
-)
+) {
+    val open: Boolean
+        get() = playerSlots.values.any { it.referenceCount.get() == 0 }
+}
 
 class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, R : GameResult, S : GameState> : Player<M, E, S, A, R> {
 
@@ -72,7 +91,8 @@ class GameInstanceProvider(
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
         GlobalScope.launch(threadPoolDispatcher) {
-            // TODO replace with actual gamemo
+
+            logger.info("Launching game ${gameDetails.slug} instance $instanceId and parameters $parameters")
 
             val gameResult = gameManager.play(
                 { game },
@@ -86,21 +106,24 @@ class GameInstanceProvider(
 
         val playerSlots = playerConfiguration
             .map {
+                val player = playerConfiguration.player(it) as WebsocketPlayer<M, A, E, R, S>
                 UUID.randomUUID() to PlayerSlots(
-                    (it as WebsocketPlayer<M, A, E, R, S>).actionChannel,
-                    (it as WebsocketPlayer<M, A, E, R, S>).eventChannel,
+                    player.actionChannel,
+                    player.eventChannel,
                 )
             }
             .toMap()
 
         instances[instanceId] = GameInstance(
             instanceId,
-            gameDetails.id,
-            true,
+            gameDetails.slug,
+//            true,
             playerSlots,
             game::state,
 //            gameDetails.actionClass
         )
+
+        logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots, current game state ${game.state}")
 
         return instanceId
     }
@@ -108,9 +131,9 @@ class GameInstanceProvider(
     fun gameInstance(instanceId: UUID): GameInstance<*, *, *>? =
         instances[instanceId]
 
-    fun openGames(gameId: UUID): List<GameInstance<*, *, *>> =
+    fun openGames(gameSlug: String): List<GameInstance<*, *, *>> =
         instances.values
-            .filter { it.gameId == gameId }
+            .filter { it.gameSlug == gameSlug }
             .filter(GameInstance<*, *, *>::open)
             .toList()
 }

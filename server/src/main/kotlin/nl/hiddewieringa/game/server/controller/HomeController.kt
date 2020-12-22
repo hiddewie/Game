@@ -1,7 +1,5 @@
 package nl.hiddewieringa.game.server.controller
 
-import nl.hiddewieringa.game.server.games.GameDetails
-import nl.hiddewieringa.game.server.games.GameInstance
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import nl.hiddewieringa.game.server.games.GameProvider
 import org.springframework.web.bind.annotation.GetMapping
@@ -16,22 +14,25 @@ class HomeController(
     val gameInstanceProvider: GameInstanceProvider,
 ) {
 
+    data class GameListItem(val slug: String, val name: String)
+
     @GetMapping("games")
-    fun games(): List<GameDetails<*, *, *, *, *, *, *, *>> =
+    fun games(): List<GameListItem> =
         gameProvider.games()
+            .map { GameListItem(it.slug, it.name) }
 
     data class OpenGame(val id: UUID, val playerSlotIds: Set<UUID>)
 
-    @GetMapping("games/{gameId}/open")
-    fun openGames(@PathVariable gameId: UUID): List<OpenGame> =
-        gameInstanceProvider.openGames(gameId)
+    @GetMapping("games/{gameSlug}/open")
+    fun openGames(@PathVariable gameSlug: String): List<OpenGame> =
+        gameInstanceProvider.openGames(gameSlug)
             .map { OpenGame(it.id, it.playerSlots.keys) }
 
-    @GetMapping("games/{gameId}/instance/{instanceId}")
-    fun instanceDetails(@PathVariable gameId: UUID, @PathVariable instanceId: UUID): GameInstance<*, *, *>? =
-        gameInstanceProvider.gameInstance(gameId)
+//    @GetMapping("games/{gameSlug}/instance/{instanceId}")
+//    fun instanceDetails(@PathVariable gameId: UUID, @PathVariable instanceId: UUID): GameInstance<*, *, *>? =
+//        gameInstanceProvider.gameInstance(gameSlug, instanceId)
 
-    @PostMapping("games/{gameId}/start")
-    suspend fun startGame(@PathVariable gameId: UUID): UUID =
-        gameInstanceProvider.start(gameProvider.byId(gameId))
+    @PostMapping("games/{gameSlug}/start")
+    suspend fun startGame(@PathVariable gameSlug: String): UUID =
+        gameInstanceProvider.start(gameProvider.bySlug(gameSlug))
 }

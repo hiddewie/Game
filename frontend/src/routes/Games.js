@@ -30,7 +30,7 @@ function App() {
       loaded: {isLoaded ? 'true' : 'false'}
     </p>
     <ul>
-      {items.map(item => <li key={item.id}><Link to={`/open/${item.id}`}>{item.id}</Link></li>)}
+      {items.map(item => <li key={item.slug}><Link to={`/open/${item.slug}`}>{item.slug}</Link></li>)}
     </ul>
   </div>);
 }

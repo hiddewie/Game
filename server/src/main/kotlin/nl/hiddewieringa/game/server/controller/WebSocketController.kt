@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import mu.KotlinLogging
 import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.core.GameState
 import nl.hiddewieringa.game.core.PlayerActions
@@ -28,6 +29,11 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
 
+private val logger = KotlinLogging.logger {}
+
+data class WrappedAction<A : PlayerActions>(val action: A)
+data class WrappedEvent<E : Event, S : GameState>(val event: E?, val state: S)
+
 @Component
 class WebSocketController(
     val gameInstanceProvider: GameInstanceProvider,
@@ -35,7 +41,6 @@ class WebSocketController(
 
     private val template = UriTemplate(URI_TEMPLATE)
 
-    // TODO make generic
     private val typeValidator = BasicPolymorphicTypeValidator.builder()
         .allowIfBaseType(Event::class.java)
         .allowIfSubType(Event::class.java)
@@ -46,9 +51,6 @@ class WebSocketController(
     private val objectMapper = jacksonObjectMapper()
         .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type")
 
-    data class WrappedAction<A : PlayerActions>(val action: A)
-    data class WrappedEvent<E : Event, S : GameState>(val event: E?, val state: S)
-
     override fun handle(session: WebSocketSession): Mono<Void> {
         val path = session.handshakeInfo.uri.path
         val instanceId: UUID = UUID.fromString(template.match(path)["instanceId"])
@@ -58,11 +60,13 @@ class WebSocketController(
     }
 
     private fun handle(playerSlotId: UUID, instanceId: UUID, session: WebSocketSession): Mono<Void> {
-        println("player slot $playerSlotId")
-
         val gameInstance = gameInstanceProvider.gameInstance(instanceId)
+
+        // If the instance or player slot does not exist, close the connection
         val playerSlots = gameInstance?.playerSlots?.get(playerSlotId)
             ?: return Mono.empty()
+
+        playerSlots.increaseReference()
 
         // TODO: other scope?
         GlobalScope.launch {
@@ -74,11 +78,12 @@ class WebSocketController(
         }
 
         // The initial state is published directly
-        val initialState = Flux.generate<WebSocketMessage> { session.stateMessage(gameInstance.stateProvider()) }
+        val initialState = Flux.just(session.stateMessage(gameInstance.stateProvider()))
         val events = playerSlots.receiveChannel.receiveAsFlow().asFlux()
             .map { (event, state) -> session.eventMessage(event, state) }
 
         return session.send(initialState.concatWith(events))
+            .doFinally { playerSlots.decreaseReference() }
     }
 
     private fun <E : Event, S : GameState> WebSocketSession.eventMessage(data: E, state: S) =
@@ -96,7 +101,7 @@ class WebSocketController(
 }
 
 @Configuration
-class WebsocketConfiguration {
+class WebSocketConfiguration {
 
     @Bean
     fun webSocketHandlerMapping(webSocketHandler: WebSocketHandler): HandlerMapping =
