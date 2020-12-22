@@ -14,7 +14,7 @@ import java.util.concurrent.Executors
 
 class PlayerSlots(
     val sendChannel: SendChannel<TicTacToePlayerActions>,
-    val receiveChannel: ReceiveChannel<TicTacToeEvent>,
+    val receiveChannel: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>,
 )
 
 class GameInstance(
@@ -22,15 +22,17 @@ class GameInstance(
     val gameId: UUID,
     val open: Boolean,
 //   TODO  val game: Game
+
+    // TODO make map of UUID to player slots (for connecting to certain player
     val playerSlots: List<PlayerSlots>,
 )
 
 class WebsocketPlayer : TicTacToePlayer {
 
-    val eventChannel = Channel<TicTacToeEvent>(capacity = 0)
+    val eventChannel = Channel<Pair<TicTacToeEvent, TicTacToeState>>(capacity = 0)
     val actionChannel = Channel<TicTacToePlayerActions>(capacity = 0)
 
-    override fun initialize(parameters: TicTacToeGameParameters, eventBus: ReceiveChannel<TicTacToeEvent>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+    override fun initialize(parameters: TicTacToeGameParameters, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
         {
             launch {
                 actionChannel.consumeEach {
@@ -38,8 +40,8 @@ class WebsocketPlayer : TicTacToePlayer {
                 }
             }
             launch {
-                eventBus.consumeEach { event ->
-                    eventChannel.send(event)
+                eventBus.consumeEach { (event, state) ->
+                    eventChannel.send(event to state)
                 }
             }
         }
@@ -67,7 +69,7 @@ class GameInstanceProvider(
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
-        val job = GlobalScope.async(threadPoolDispatcher) {
+        GlobalScope.async(threadPoolDispatcher) {
             // TODO replace with actual game
 
             GameManager().play(

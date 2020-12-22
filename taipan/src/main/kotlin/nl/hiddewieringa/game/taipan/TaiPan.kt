@@ -5,7 +5,14 @@ import nl.hiddewieringa.game.taipan.card.*
 import nl.hiddewieringa.game.taipan.player.TaiPanPlayer
 import kotlin.random.Random
 
-typealias TaiPanGameContext = GameContext<TaiPanPlayerActions, TaiPanEvent, TwoTeamPlayerId, TwoTeams<TaiPanPlayer>>
+typealias TaiPanGameContext = GameContext<TaiPanPlayerActions, TaiPanEvent, TwoTeamPlayerId, TwoTeams<TaiPanPlayer>, TaiPanState>
+
+class TaiPanState() : GameState {
+
+//    constructor(): this(
+//
+//    )
+}
 
 class TaiPan(
     private val parameters: TaiPanGameParameters
@@ -16,8 +23,11 @@ class TaiPan(
     TaiPanEvent,
     TaiPanGameResult,
     TwoTeamPlayerId,
-    TwoTeams<TaiPanPlayer>
+    TwoTeams<TaiPanPlayer>,
+    TaiPanState,
     > {
+
+    override var state = TaiPanState()
 
     override suspend fun play(context: TaiPanGameContext): TaiPanGameResult {
 

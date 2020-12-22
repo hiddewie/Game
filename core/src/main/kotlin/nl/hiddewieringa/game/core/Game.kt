@@ -8,27 +8,33 @@ import kotlinx.coroutines.channels.SendChannel
  */
 interface Game<
     M : GameParameters,
-    P : Player<M, E, A, R>,
+    P : Player<M, E, S, A, R>,
     A : PlayerActions,
     E : Event,
     R : GameResult,
     PID : PlayerId,
-    PC : PlayerConfiguration<PID, P>> {
-    suspend fun play(context: GameContext<A, E, PID, PC>): R
+    PC : PlayerConfiguration<PID, P>,
+    S : GameState> {
+
+    val state: S
+
+    suspend fun play(context: GameContext<A, E, PID, PC, S>): R
 }
 
-class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, *>>(
+class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, *>, S : GameState>(
     val players: PC,
-    private val sendAllChannel: SendChannel<E>,
-    private val playerChannel: SendChannel<Pair<PID, E>>,
+    val state: () -> S,
+    private val sendAllChannel: SendChannel<Pair<E, S>>,
+    private val playerChannel: SendChannel<Triple<PID, E, S>>,
     private val playerActions: ReceiveChannel<Pair<PID, A>>
 ) {
     suspend fun sendToAllPlayers(event: E) {
-        sendAllChannel.send(event)
+        sendAllChannel.send(event to state())
     }
 
     suspend fun sendToPlayer(playerId: PID, event: E) {
-        playerChannel.send(playerId to event)
+        // TODO make player state
+        playerChannel.send(Triple(playerId, event, state()))
     }
 
     suspend fun receiveFromPlayer(): Pair<PID, A> =
@@ -40,3 +46,7 @@ interface GameResult
 interface GameParameters
 
 interface PlayerActions
+
+// TODO add apply method that applies a single event
+// TODO add game state and state for each player
+interface GameState

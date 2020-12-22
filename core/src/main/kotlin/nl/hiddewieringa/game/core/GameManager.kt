@@ -10,9 +10,9 @@ import kotlinx.coroutines.launch
 
 class GameManager {
 
-    suspend fun <M : GameParameters, P : Player<M, E, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>>
+    suspend fun <M : GameParameters, P : Player<M, E, S, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState>
     play(
-        gameFactory: (M) -> Game<M, P, A, E, R, PID, PC>,
+        gameFactory: (M) -> Game<M, P, A, E, R, PID, PC, S>,
         playerFactory: () -> PC,
         parameters: M
     ): R {
@@ -21,11 +21,11 @@ class GameManager {
 
         return coroutineScope {
             val gameReceiveChannel = Channel<Pair<PID, A>>(capacity = UNLIMITED)
-            val gameSendChannel = Channel<Pair<PID, E>>(capacity = UNLIMITED)
-            val gameSendAllChannel = Channel<E>(capacity = UNLIMITED)
+            val gameSendChannel = Channel<Triple<PID, E, S>>(capacity = UNLIMITED)
+            val gameSendAllChannel = Channel<Pair<E, S>>(capacity = UNLIMITED)
 
             val playerChannels = players.allPlayers
-                .map { playerId -> playerId to Channel<E>(capacity = UNLIMITED) }
+                .map { playerId -> playerId to Channel<Pair<E, S>>(capacity = UNLIMITED) }
                 .toMap()
 
             launch {
@@ -38,19 +38,19 @@ class GameManager {
 
             launch {
                 gameSendChannel.consumeEach {
-                    playerChannels.getValue(it.first).send(it.second)
+                    playerChannels.getValue(it.first).send(it.second to it.third)
                 }
             }
 
             players.allPlayers.forEach { playerId ->
-                val playerProducer = players.player(playerId).initialize(parameters, playerChannels.getValue(playerId))
+                val playerProducer = players.player(playerId).initialize(parameters, game.state, playerChannels.getValue(playerId))
                 val playerSendChannel = produce(coroutineContext, UNLIMITED, playerProducer)
                 launch {
                     playerSendChannel.consumeEach { gameReceiveChannel.send(playerId to it) }
                 }
             }
 
-            val result = game.play(GameContext(players, gameSendAllChannel, gameSendChannel, gameReceiveChannel))
+            val result = game.play(GameContext(players, { game.state }, gameSendAllChannel, gameSendChannel, gameReceiveChannel))
 
             // The game is done, players must exit
             players.allPlayers.forEach { players.player(it).gameEnded(result) }

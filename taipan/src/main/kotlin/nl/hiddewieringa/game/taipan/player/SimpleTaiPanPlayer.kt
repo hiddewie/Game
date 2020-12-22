@@ -9,16 +9,16 @@ import nl.hiddewieringa.game.taipan.TaiPanGameParameters
 import nl.hiddewieringa.game.taipan.TaiPanGameResult
 import nl.hiddewieringa.game.taipan.card.*
 
-typealias TaiPanPlayer = Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TaiPanGameResult>
+typealias TaiPanPlayer = Player<TaiPanGameParameters, TaiPanEvent, TaiPanState, TaiPanPlayerActions, TaiPanGameResult>
 
 class SimpleTaiPanPlayer : TaiPanPlayer {
 
     private lateinit var hand: CardSet
     private var lastPlayedCards: CardCombination? = null
 
-    override fun initialize(parameters: TaiPanGameParameters, eventBus: ReceiveChannel<TaiPanEvent>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
+    override fun initialize(parameters: TaiPanGameParameters, initialState: TaiPanState, eventBus: ReceiveChannel<Pair<TaiPanEvent, TaiPanState>>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
         {
-            eventBus.consumeEach { event ->
+            eventBus.consumeEach { (event, state) ->
                 when (event) {
                     is CardsHaveBeenDealt -> {
                         hand = event.cards

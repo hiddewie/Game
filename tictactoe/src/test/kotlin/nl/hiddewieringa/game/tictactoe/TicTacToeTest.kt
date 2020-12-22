@@ -78,9 +78,9 @@ class TicTacToeTest {
         private fun play(): Location =
             locations[index++]
 
-        override fun initialize(parameters: TicTacToeGameParameters, eventBus: ReceiveChannel<TicTacToeEvent>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+        override fun initialize(parameters: TicTacToeGameParameters, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
             {
-                eventBus.consumeEach { event ->
+                eventBus.consumeEach { (event, state) ->
                     when (event) {
                         is PlaceMark -> send(PlaceMarkLocation(play()))
                         else -> {

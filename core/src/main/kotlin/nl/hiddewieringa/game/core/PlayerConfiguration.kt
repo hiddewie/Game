@@ -2,13 +2,13 @@ package nl.hiddewieringa.game.core
 
 interface PlayerId
 
-sealed class PlayerConfiguration<ID : PlayerId, P : Player<*, *, *, *>>(
+sealed class PlayerConfiguration<ID : PlayerId, P : Player<*, *, *, *, *>>(
     val allPlayers: Set<ID>
 ) {
     abstract fun player(id: ID): P
 }
 
-data class SinglePlayer<P : Player<*, *, *, *>>(
+data class SinglePlayer<P : Player<*, *, *, *, *>>(
     val player: P
 ) : PlayerConfiguration<SingletonPlayer, P>(setOf(SingletonPlayer.PLAYER)) {
     override fun player(id: SingletonPlayer) =
@@ -19,7 +19,7 @@ enum class SingletonPlayer : PlayerId {
     PLAYER
 }
 
-data class TwoPlayers<P : Player<*, *, *, *>>(
+data class TwoPlayers<P : Player<*, *, *, *, *>>(
     val player1: P,
     val player2: P
 ) : PlayerConfiguration<TwoPlayerId, P>(setOf(TwoPlayerId.PLAYER1, TwoPlayerId.PLAYER2)) {
@@ -35,7 +35,7 @@ enum class TwoPlayerId : PlayerId {
     PLAYER2
 }
 
-data class TwoTeams<P : Player<*, *, *, *>>(
+data class TwoTeams<P : Player<*, *, *, *, *>>(
     val team1: TwoPlayers<P>,
     val team2: TwoPlayers<P>
 ) : PlayerConfiguration<TwoTeamPlayerId, P>(setOf(TwoTeamPlayerId.PLAYER1, TwoTeamPlayerId.PLAYER2, TwoTeamPlayerId.PLAYER3, TwoTeamPlayerId.PLAYER4)) {

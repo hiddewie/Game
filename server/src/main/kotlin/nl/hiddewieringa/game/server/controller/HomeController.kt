@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
 import nl.hiddewieringa.game.core.Event
+import nl.hiddewieringa.game.core.GameState
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.server.games.GameDetails
 import nl.hiddewieringa.game.server.games.GameInstance
@@ -75,7 +76,7 @@ class ReactiveWebSocketHandler(
         .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type")
 
     data class WrappedAction<T : PlayerActions>(val action: T)
-    data class WrappedEvent<T : Event>(val event: T)
+    data class WrappedEvent<T : Event, S : GameState>(val event: T, val state: S)
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val instanceId: UUID = UUID.fromString(template.match(session.handshakeInfo.uri.path)["instanceId"])
@@ -93,7 +94,7 @@ class ReactiveWebSocketHandler(
         }
 
         val output = playerSlots.receiveChannel.receiveAsFlow().asFlux()
-            .map { session.textMessage(objectMapper.writeValueAsString(WrappedEvent(it))) }
+            .map { session.textMessage(objectMapper.writeValueAsString(WrappedEvent(it.first, it.second))) }
 
         return session.send(output)
     }

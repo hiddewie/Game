@@ -27,8 +27,8 @@ class TaiPanTest {
                 TwoPlayers(SimpleTaiPanPlayer(), SimpleTaiPanPlayer()),
             )
 
-            val allPlayers = Channel<TaiPanEvent>(capacity = Channel.UNLIMITED)
-            val gamePlayerChannel = Channel<Pair<TwoTeamPlayerId, TaiPanEvent>>(capacity = Channel.UNLIMITED)
+            val allPlayers = Channel<Pair<TaiPanEvent, TaiPanState>>(capacity = Channel.UNLIMITED)
+            val gamePlayerChannel = Channel<kotlin.Triple<TwoTeamPlayerId, TaiPanEvent, TaiPanState>>(capacity = Channel.UNLIMITED)
             val playerGameChannel = Channel<Pair<TwoTeamPlayerId, TaiPanPlayerActions>>(capacity = Channel.UNLIMITED)
 
             val gameAsserts = channelAssert(allPlayers) {
@@ -383,7 +383,7 @@ class TaiPanTest {
 
             launch {
                 withTimeout(2.seconds) {
-                    val gameResult = game.play(GameContext(players, allPlayers, gamePlayerChannel, playerGameChannel))
+                    val gameResult = game.play(GameContext(players, { game.state }, allPlayers, gamePlayerChannel, playerGameChannel))
                     assertEquals(Team2Won, gameResult)
                 }
             }
@@ -427,8 +427,13 @@ class TaiPanTest {
             ChannelAsserter(channel).asserter()
         }
 
-    private suspend fun <A : PlayerId, B : Any, T : B> ChannelAsserter<Pair<A, B>>.assertNext(first: A, second: KClass<T>) {
+    private suspend fun <A : Any, B : Any> ChannelAsserter<Pair<A, B>>.assertNext(first: A) {
         val (key, value) = channel.receive()
-        assertTrue(key == first && second.isInstance(value)) { "Got ($key, $value), expected ($first, instance of $second)" }
+        assertTrue(key == first) { "Got ($key, $value), expected ($first)" }
+    }
+
+    private suspend fun <A : Any, B : Any, T : B, C : Any> ChannelAsserter<kotlin.Triple<A, B, C>>.assertNext(first: A, second: KClass<T>) {
+        val (a, b, c) = channel.receive()
+        assertTrue(a == first && second.isInstance(b)) { "Got ($a, $b, $c), expected ($first, instance of $second)" }
     }
 }
