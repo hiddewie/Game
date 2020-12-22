@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -17,8 +18,6 @@ import nl.hiddewieringa.game.server.games.GameDetails
 import nl.hiddewieringa.game.server.games.GameInstance
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import nl.hiddewieringa.game.server.games.GameProvider
-import nl.hiddewieringa.game.tictactoe.TicTacToeEvent
-import nl.hiddewieringa.game.tictactoe.TicTacToePlayerActions
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
@@ -43,7 +42,7 @@ class HomeController(
 ) {
 
     @GetMapping("games")
-    fun games(): List<GameDetails> =
+    fun games(): List<GameDetails<*, *, *, *, *, *, *, *>> =
         gameProvider.games()
 
     data class OpenGame(val id: UUID, val playerSlotIds: Set<UUID>)
@@ -54,12 +53,12 @@ class HomeController(
             .map { OpenGame(it.id, it.playerSlots.keys) }
 
     @GetMapping("games/{gameId}/instance/{instanceId}")
-    fun instanceDetails(@PathVariable gameId: UUID, @PathVariable instanceId: UUID): GameInstance? =
+    fun instanceDetails(@PathVariable gameId: UUID, @PathVariable instanceId: UUID): GameInstance<*, *, *>? =
         gameInstanceProvider.gameInstance(gameId)
 
     @PostMapping("games/{gameId}/start")
     suspend fun startGame(@PathVariable gameId: UUID): UUID =
-        gameInstanceProvider.startGame(gameId)
+        gameInstanceProvider.start(gameProvider.byId(gameId))
 }
 
 @Component
@@ -71,22 +70,27 @@ class ReactiveWebSocketHandler(
 
     // TODO make generic
     private val typeValidator = BasicPolymorphicTypeValidator.builder()
-        .allowIfBaseType(TicTacToeEvent::class.java)
-        .allowIfSubType(TicTacToeEvent::class.java)
-        .allowIfBaseType(TicTacToePlayerActions::class.java)
-        .allowIfSubType(TicTacToePlayerActions::class.java)
+        .allowIfBaseType(Event::class.java)
+        .allowIfSubType(Event::class.java)
+        .allowIfBaseType(PlayerActions::class.java)
+        .allowIfSubType(PlayerActions::class.java)
         .build()
 
     private val objectMapper = jacksonObjectMapper()
         .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type")
 
-    data class WrappedAction<T : PlayerActions>(val action: T)
-    data class WrappedEvent<T : Event, S : GameState>(val event: T?, val state: S)
+    data class WrappedAction<A : PlayerActions>(val action: A)
+    data class WrappedEvent<E : Event, S : GameState>(val event: E?, val state: S)
 
     override fun handle(session: WebSocketSession): Mono<Void> {
-        val instanceId: UUID = UUID.fromString(template.match(session.handshakeInfo.uri.path)["instanceId"])
-        val playerSlotId: UUID = UUID.fromString(template.match(session.handshakeInfo.uri.path)["playerSlotId"])
+        val path = session.handshakeInfo.uri.path
+        val instanceId: UUID = UUID.fromString(template.match(path)["instanceId"])
+        val playerSlotId: UUID = UUID.fromString(template.match(path)["playerSlotId"])
 
+        return handle(playerSlotId, instanceId, session)
+    }
+
+    private fun handle(playerSlotId: UUID, instanceId: UUID, session: WebSocketSession): Mono<Void> {
         println("player slot $playerSlotId")
 
         val gameInstance = gameInstanceProvider.gameInstance(instanceId)
@@ -99,16 +103,25 @@ class ReactiveWebSocketHandler(
                 // Messages must be retained to make Netty not lose it due to 0 message reference count
                 .map(WebSocketMessage::retain)
                 .asFlow()
-                .collect { playerSlots.sendChannel.send(objectMapper.readValue<WrappedAction<TicTacToePlayerActions>>(it.payloadAsText).action) }
+                .collect { (playerSlots.sendChannel as SendChannel<PlayerActions>).send(readAction(it)) }
         }
 
-        println(WrappedEvent(null, gameInstance.stateProvider()))
-        val initialState = Flux.just(session.textMessage(objectMapper.writeValueAsString(WrappedEvent(null, gameInstance.stateProvider()))) )
+        // The initial state is published directly
+        val initialState = Flux.generate<WebSocketMessage> { session.stateMessage(gameInstance.stateProvider()) }
         val events = playerSlots.receiveChannel.receiveAsFlow().asFlux()
-            .map { session.textMessage(objectMapper.writeValueAsString(WrappedEvent(it.first, it.second))) }
+            .map { (event, state) -> session.eventMessage(event, state) }
 
         return session.send(initialState.concatWith(events))
     }
+
+    private fun <E : Event, S : GameState> WebSocketSession.eventMessage(data: E, state: S) =
+        textMessage(objectMapper.writeValueAsString(WrappedEvent(data, state)))
+
+    private fun <A : PlayerActions> readAction(message: WebSocketMessage): A =
+        objectMapper.readValue<WrappedAction<A>>(message.payloadAsText).action
+
+    private fun <S : GameState> WebSocketSession.stateMessage(state: S) =
+        textMessage(objectMapper.writeValueAsString(WrappedEvent(null, state)))
 
     companion object {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"

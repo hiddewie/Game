@@ -7,12 +7,7 @@ import kotlin.random.Random
 
 typealias TaiPanGameContext = GameContext<TaiPanPlayerActions, TaiPanEvent, TwoTeamPlayerId, TwoTeams<TaiPanPlayer>, TaiPanState>
 
-class TaiPanState() : GameState {
-
-//    constructor(): this(
-//
-//    )
-}
+class TaiPanState : GameState
 
 class TaiPan(
     private val parameters: TaiPanGameParameters

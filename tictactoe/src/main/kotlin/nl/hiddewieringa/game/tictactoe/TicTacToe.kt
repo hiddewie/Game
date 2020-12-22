@@ -1,6 +1,8 @@
 package nl.hiddewieringa.game.tictactoe
 
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.channels.ProducerScope
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.consumeEach
 import nl.hiddewieringa.game.core.*
 
 typealias TicTacToeGameContext = GameContext<TicTacToePlayerActions, TicTacToeEvent, TwoPlayerId, TwoPlayers<TicTacToePlayer>, TicTacToeState>
@@ -28,7 +30,9 @@ class TicTacToeState(
         }
 }
 
-class TicTacToe : Game<
+class TicTacToe(
+    private val parameters: TicTacToeGameParameters,
+) : Game<
     TicTacToeGameParameters,
     TicTacToePlayer,
     TicTacToePlayerActions,
@@ -40,22 +44,15 @@ class TicTacToe : Game<
     > {
 
     override var state = TicTacToeState()
-//        get() = TicTacToeState(board.map { it.copyOf() }.toTypedArray())
 
     private fun noPlayerWon(): Boolean =
         state.board.all { it.all { value -> value != null } }
 
     private fun playerWon(location: Location, mark: GameMark): Boolean =
-        (
-            state.board[location.x][0] == mark &&
-                state.board[location.x][1] == mark &&
-                state.board[location.x][2] == mark
-            ) ||
-            (
-                state.board[0][location.y] == mark &&
-                    state.board[1][location.y] == mark &&
-                    state.board[2][location.y] == mark
-                )
+        (0 until 3).all { i -> state.board[location.x][i] == mark } ||
+            (0 until 3).all { i -> state.board[i][location.y] == mark } ||
+            (0 until 3).all { i -> state.board[i][i] == mark } ||
+            (0 until 3).all { i -> state.board[i][2 - i] == mark }
 
     override suspend fun play(context: TicTacToeGameContext): TicTacToeGameResult {
 
@@ -65,7 +62,7 @@ class TicTacToe : Game<
         )
 
         while (true) {
-            context.players.allPlayers.forEach { playerId ->
+            context.players.forEach { playerId ->
                 // TODO add timing checks (withTimeout)
                 context.sendToPlayer(playerId, PlaceMark)
                 val (receivedPlayerId, action) = context.receiveFromPlayer()

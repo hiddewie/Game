@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useState} from "react";
 import {useParams} from "react-router";
 import {Link} from "react-router-dom";
 
@@ -8,7 +8,7 @@ function App(props) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [items, setItems] = useState([]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const games = await (await fetch(`http://localhost:3000/games/${gameId}/open`)).json()
       setIsLoaded(true)
@@ -17,7 +17,7 @@ function App(props) {
       setIsLoaded(true);
       setError(error);
     }
-  }
+  }, [gameId])
 
   const startGame = async () => {
     const startedGame = await (await fetch(`http://localhost:3000/games/${gameId}/start`, {method: 'POST'})).json()
@@ -27,17 +27,17 @@ function App(props) {
 
   useEffect(() => {
     fetchData();
-  }, [])
+  }, [fetchData])
 
   if (error) {
     return <p>{error}</p>
   }
 
   const listItems = (<ul>
-    {items.map(item => (<li>
+    {items.map(item => (<li key={item.id}>
       <ul>
-      {item.playerSlotIds.map(playerSlotId => <li><Link to={`/play/${gameId}/${item.id}/${playerSlotId}`}>{item.id} &mdash; {playerSlotId}</Link></li>)}
-    </ul>
+        {item.playerSlotIds.map(playerSlotId => <li key={playerSlotId}><Link to={`/play/${gameId}/${item.id}/${playerSlotId}`}>{item.id} &mdash; {playerSlotId}</Link></li>)}
+      </ul>
     </li>))}
   </ul>)
 

@@ -2,38 +2,33 @@ package nl.hiddewieringa.game.server.games
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.launch
-import nl.hiddewieringa.game.core.GameManager
-import nl.hiddewieringa.game.core.TwoPlayers
-import nl.hiddewieringa.game.tictactoe.*
+import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.Executors
 
-class PlayerSlots(
-    val sendChannel: SendChannel<TicTacToePlayerActions>,
-    val receiveChannel: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>,
+class PlayerSlots<A : PlayerActions, E : Event, S : GameState>(
+    val sendChannel: SendChannel<A>,
+    val receiveChannel: ReceiveChannel<Pair<E, S>>,
 )
 
-class GameInstance(
+class GameInstance<A : PlayerActions, E : Event, S : GameState>(
     val id: UUID,
     val gameId: UUID,
     val open: Boolean,
-//   TODO  val game: Game
-
-    val playerSlots: Map<UUID, PlayerSlots>,
-    // TODO generify
-    val stateProvider: () -> TicTacToeState,
+    val playerSlots: Map<UUID, PlayerSlots<A, E, S>>,
+    val stateProvider: () -> S,
+//    val actionClass: Class<A>,
 )
 
-class WebsocketPlayer : TicTacToePlayer {
+class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, R : GameResult, S : GameState> : Player<M, E, S, A, R> {
 
-    val eventChannel = Channel<Pair<TicTacToeEvent, TicTacToeState>>(capacity = 0)
-    val actionChannel = Channel<TicTacToePlayerActions>(capacity = 0)
+    val eventChannel = Channel<Pair<E, S>>(capacity = 0)
+    val actionChannel = Channel<A>(capacity = 0)
 
-    override fun initialize(parameters: TicTacToeGameParameters, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+    override fun initialize(parameters: M, initialState: S, eventBus: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
         {
             launch {
                 actionChannel.consumeEach {
@@ -47,70 +42,75 @@ class WebsocketPlayer : TicTacToePlayer {
             }
         }
 
-    override fun gameEnded(result: TicTacToeGameResult) {
+    override fun gameEnded(result: R) {
+        // TODO close channels!
+//        actionChannel.close()
+//        eventChannel.close()
     }
 }
 
 @Component
 class GameInstanceProvider(
-// TODO    private val gameProvider: GameProvider
+    private val gameManager: GameManager,
 ) {
 
-    private val instances: MutableMap<UUID, GameInstance> = mutableMapOf()
+    private val instances: MutableMap<UUID, GameInstance<*, *, *>> = mutableMapOf()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
-    suspend fun startGame(gameId: UUID): UUID {
-        val instanceId = UUID.randomUUID()
+    fun <M : GameParameters, P : Player<M, E, S, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState>
+    start(gameDetails: GameDetails<M, P, A, E, R, PID, PC, S>): UUID {
 
-        val game = TicTacToe()
-        val players: TwoPlayers<TicTacToePlayer> = TwoPlayers(
-            WebsocketPlayer(),
-            WebsocketPlayer()
-        )
+        val instanceId = UUID.randomUUID()
+        val parameters = gameDetails.defaultParameters
+
+        // We need a reference to the players for exposing the channels
+        val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, R, S>() as P })
+        // We need a reference to the game to expose the latest game state
+        val game = gameDetails.gameFactory(parameters)
 
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
-        GlobalScope.async(threadPoolDispatcher) {
-            // TODO replace with actual game
+        GlobalScope.launch(threadPoolDispatcher) {
+            // TODO replace with actual gamemo
 
-            val gameResult = GameManager().play(
+            val gameResult = gameManager.play(
                 { game },
-                { players },
-                TicTacToeGameParameters
+                { playerConfiguration },
+                parameters,
             )
 
             // TODO store game result
             println("Game result of $instanceId: $gameResult")
         }
 
+        val playerSlots = playerConfiguration
+            .map {
+                UUID.randomUUID() to PlayerSlots(
+                    (it as WebsocketPlayer<M, A, E, R, S>).actionChannel,
+                    (it as WebsocketPlayer<M, A, E, R, S>).eventChannel,
+                )
+            }
+            .toMap()
+
         instances[instanceId] = GameInstance(
             instanceId,
-            gameId,
+            gameDetails.id,
             true,
-            // TODO make generic
-            mapOf(
-                UUID.randomUUID() to PlayerSlots(
-                    (players.player1 as WebsocketPlayer).actionChannel,
-                    (players.player1 as WebsocketPlayer).eventChannel,
-                ),
-                UUID.randomUUID() to PlayerSlots(
-                    (players.player2 as WebsocketPlayer).actionChannel,
-                    (players.player2 as WebsocketPlayer).eventChannel,
-                ),
-            ),
+            playerSlots,
             game::state,
+//            gameDetails.actionClass
         )
 
         return instanceId
     }
 
-    fun gameInstance(instanceId: UUID): GameInstance? =
+    fun gameInstance(instanceId: UUID): GameInstance<*, *, *>? =
         instances[instanceId]
 
-    fun openGames(gameId: UUID): List<GameInstance> =
+    fun openGames(gameId: UUID): List<GameInstance<*, *, *>> =
         instances.values
             .filter { it.gameId == gameId }
-            .filter(GameInstance::open)
+            .filter(GameInstance<*, *, *>::open)
             .toList()
 }

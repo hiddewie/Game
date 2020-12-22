@@ -8,6 +8,7 @@ import nl.hiddewieringa.game.core.GameManager
 import nl.hiddewieringa.game.core.TwoPlayers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class TicTacToeTest {
 
@@ -17,11 +18,11 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
-                { TicTacToe() },
+                ::TicTacToe,
                 {
                     TwoPlayers(
-                        FreeSpaceTicTacToePlayer(),
-                        FreeSpaceTicTacToePlayer(),
+                        StubbedPlayer(listOf(Location(0, 0), Location(1, 2), Location(1, 1), Location(2, 0), Location(2, 1))),
+                        StubbedPlayer(listOf(Location(0, 2), Location(0, 1), Location(2, 2), Location(1, 0))),
                     )
                 },
                 TicTacToeGameParameters
@@ -37,7 +38,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
-                { TicTacToe() },
+                ::TicTacToe,
                 {
                     TwoPlayers(
                         StubbedPlayer(listOf(Location(0, 0), Location(0, 0))),
@@ -57,7 +58,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
-                { TicTacToe() },
+                ::TicTacToe,
                 {
                     TwoPlayers(
                         StubbedPlayer(listOf(Location(0, 0), Location(0, 1), Location(0, 2))),
@@ -71,16 +72,16 @@ class TicTacToeTest {
         }
     }
 
-    class StubbedPlayer(private val locations: List<Location>) : TicTacToePlayer {
+    class StubbedPlayer(locations: List<Location>) : TicTacToePlayer {
 
-        private var index: Int = 0
+        private val locationsQueue = ArrayDeque(locations)
 
         private fun play(): Location =
-            locations[index++]
+            locationsQueue.pop()
 
         override fun initialize(parameters: TicTacToeGameParameters, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
             {
-                eventBus.consumeEach { (event, state) ->
+                eventBus.consumeEach { (event, _) ->
                     when (event) {
                         is PlaceMark -> send(PlaceMarkLocation(play()))
                         else -> {

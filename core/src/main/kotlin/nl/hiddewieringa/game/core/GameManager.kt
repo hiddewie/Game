@@ -31,7 +31,7 @@ class GameManager {
 
             launch {
                 gameSendAllChannel.consumeEach { event ->
-                    players.allPlayers.forEach { playerId ->
+                    players.forEach { playerId ->
                         playerChannels.getValue(playerId).send(event)
                     }
                 }
@@ -43,7 +43,7 @@ class GameManager {
                 }
             }
 
-            players.allPlayers.forEach { playerId ->
+            players.forEach { playerId ->
                 val playerProducer = players.player(playerId).initialize(parameters, game.state, playerChannels.getValue(playerId))
                 val playerSendChannel = produce(coroutineContext, UNLIMITED, playerProducer)
                 launch {
@@ -54,7 +54,7 @@ class GameManager {
             val result = game.play(GameContext(players, { game.state }, gameSendAllChannel, gameSendChannel, gameReceiveChannel))
 
             // The game is done, players must exit
-            players.allPlayers.forEach { players.player(it).gameEnded(result) }
+            players.forEach { players.player(it).gameEnded(result) }
             coroutineContext.cancelChildren()
 
             result

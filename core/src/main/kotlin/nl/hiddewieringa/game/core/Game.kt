@@ -5,6 +5,9 @@ import kotlinx.coroutines.channels.SendChannel
 
 /**
  * Interface for a game that can be played by certain players.
+ *
+ * This interface models the interaction of the players with the game state, and implements the game logic by reacting to player actions.
+ * The players actions cause game events, which are processed applied to the game state to produce a new game state.
  */
 interface Game<
     M : GameParameters,

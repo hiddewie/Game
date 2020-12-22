@@ -46,3 +46,4 @@ Run the tests with `./gradlew test`.
 - Improve Game library
   - Games should manage some kind of state (game state and player specific state), and be more event driven internally, instead of imperative.
 
+- CLI interface for playing games

@@ -4,7 +4,7 @@ interface PlayerId
 
 sealed class PlayerConfiguration<ID : PlayerId, P : Player<*, *, *, *, *>>(
     val allPlayers: Set<ID>
-) {
+) : Set<ID> by allPlayers {
     abstract fun player(id: ID): P
 }
 
