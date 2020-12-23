@@ -69,7 +69,7 @@ class TaiPan(
             when (action) {
                 is RequestNextCards ->
                     if (playerCards.getValue(playerId).size > 8) {
-                        sendToPlayer(playerId, IllegalAction("Already tai panned", action))
+                        sendToPlayer(playerId, IllegalAction("Already received next cards", action))
                     } else {
                         val newCards = shuffled.subList(4 * 8 + requestedPlayers * 6, 4 * 8 + (requestedPlayers + 1) * 6)
                         playerCards.getValue(playerId).addAll(newCards)

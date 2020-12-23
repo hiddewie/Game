@@ -1,6 +1,3 @@
-import {useEffect, useRef, useState} from "react";
-import {useParams} from "react-router";
-
 const emptyBoard = [[null, null, null], [null, null, null], [null, null, null]]
 
 function TicTacToe(props) {
@@ -9,7 +6,7 @@ function TicTacToe(props) {
 
   const play = (x, y) => {
     console.info('play', x, y)
-    dispatchAction( {'@type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x, y}})
+    dispatchAction({'@type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x, y}})
   }
 
   return (<div>

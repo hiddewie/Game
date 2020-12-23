@@ -5,7 +5,6 @@ import TaiPan  from "./games/TaiPan";
 
 function App() {
   const {gameSlug, instanceId, playerSlotId} = useParams();
-  const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
   const [gameState, setGameState] = useState(null);
   const webSocket = useRef(null);
@@ -23,7 +22,7 @@ function App() {
     webSocket.current.onmessage = function (evt) {
       const data = JSON.parse(evt.data)
       const {event, state} = data
-      console.info('message', {event, state})
+      console.info('message', 'event',event,'state', state)
       setGameState(state)
     };
     webSocket.current.onerror = function (evt) {
@@ -36,15 +35,11 @@ function App() {
       webSocket.current = null
       setConnected(false)
     }
-  }, [])
+  }, [instanceId, playerSlotId])
 
   const dispatchAction = (action) => {
     webSocket.current?.send(JSON.stringify({action}))
     console.info('action', action)
-  }
-
-  if (error) {
-    return <p>{error}</p>
   }
 
   return (<div>
