@@ -6,9 +6,9 @@ import kotlinx.coroutines.channels.ReceiveChannel
 interface Player<
     M : GameParameters,
     E : Event,
-    S : GameState,
     A : PlayerActions,
-    R : GameResult,
+    PID : PlayerId,
+    S : State<S>
     > {
 
     /**
@@ -16,14 +16,7 @@ interface Player<
      *
      * TODO rename to play
      */
-    fun initialize(parameters: M, initialState: S, eventBus: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit
-
-    /**
-     * Clean up resources
-     *
-     * TODO make game event
-     */
-    fun gameEnded(result: R)
+    fun initialize(parameters: M, playerId: PID, initialState: S, eventBus: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit
 }
 
 interface PlayerSpecific {

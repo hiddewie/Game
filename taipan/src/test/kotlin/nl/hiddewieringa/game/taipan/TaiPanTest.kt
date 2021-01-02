@@ -7,7 +7,6 @@ import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.core.TwoTeamPlayerId.*
 import nl.hiddewieringa.game.taipan.card.*
 import nl.hiddewieringa.game.taipan.player.SimpleTaiPanPlayer
-import nl.hiddewieringa.game.taipan.player.TaiPanPlayer
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -23,7 +22,7 @@ class TaiPanTest {
             val parameters = TaiPanGameParameters(10, 0)
             val game = TaiPan(parameters)
             val players = TwoTeams(
-                TwoPlayers<TaiPanPlayer>(SimpleTaiPanPlayer(), SimpleTaiPanPlayer()),
+                TwoPlayers(SimpleTaiPanPlayer(), SimpleTaiPanPlayer()),
                 TwoPlayers(SimpleTaiPanPlayer(), SimpleTaiPanPlayer()),
             )
 
@@ -55,14 +54,14 @@ class TaiPanTest {
                 assertNext(PlayerFolds(PLAYER3))
                 assertNext(PlayerFolds(PLAYER4))
                 assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2))
+                assertNext(TrickWon(PLAYER2, PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, PhoenixTriple(NumberedCard.QUEEN of Suit.HEARTS, NumberedCard.QUEEN of Suit.SPADES, Phoenix)))
                 assertNext(PlayerFolds(PLAYER3))
                 assertNext(PlayerFolds(PLAYER4))
                 assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2))
+                assertNext(TrickWon(PLAYER2, PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(2 of Suit.DIAMONDS)))
@@ -74,21 +73,21 @@ class TaiPanTest {
                 assertNext(PlayerFolds(PLAYER3))
                 assertNext(PlayerFolds(PLAYER4))
                 assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2))
+                assertNext(TrickWon(PLAYER2, PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(3 of Suit.DIAMONDS)))
                 assertNext(PlayerFolds(PLAYER3))
                 assertNext(PlayerFolds(PLAYER4))
                 assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2))
+                assertNext(TrickWon(PLAYER2, PLAYER2))
 
                 assertNext(TrickBegan(PLAYER2))
                 assertNext(PlayerPlayedCards(PLAYER2, HighCard(10 of Suit.CLUBS)))
                 assertNext(PlayerFolds(PLAYER3))
                 assertNext(PlayerFolds(PLAYER4))
                 assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2))
+                assertNext(TrickWon(PLAYER2, PLAYER2))
 
                 assertNext(TrickBegan(PLAYER3))
                 assertNext(
@@ -106,56 +105,56 @@ class TaiPanTest {
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(2 of Suit.SPADES)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(3 of Suit.SPADES)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(4 of Suit.DIAMONDS)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(9 of Suit.SPADES)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(10 of Suit.SPADES)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, HighCard(NumberedCard.JACK of Suit.DIAMONDS)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(TrickBegan(PLAYER4))
                 assertNext(PlayerPlayedCards(PLAYER4, NumberedTriple(NumberedCard.KING of Suit.HEARTS, NumberedCard.KING of Suit.DIAMONDS, NumberedCard.KING of Suit.CLUBS)))
                 assertNext(PlayerFolds(PLAYER1))
                 assertNext(PlayerFolds(PLAYER2))
                 assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4))
+                assertNext(TrickWon(PLAYER4, PLAYER4))
 
                 assertNext(RoundEnded(1, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)))
                 assertNext(ScoreUpdated(mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)))
@@ -182,10 +181,10 @@ class TaiPanTest {
                 assertNext(PLAYER3, RequestPassCards::class)
                 assertNext(PLAYER4, RequestPassCards::class)
 
-                playerGameChannel.send(PLAYER4 to CardPass(Dog, NumberedCard.QUEEN of Suit.HEARTS, Dragon))
-                playerGameChannel.send(PLAYER2 to CardPass(7 of Suit.HEARTS, NumberedCard.KING of Suit.CLUBS, 9 of Suit.HEARTS))
-                playerGameChannel.send(PLAYER1 to CardPass(2 of Suit.HEARTS, NumberedCard.KING of Suit.SPADES, 3 of Suit.SPADES))
-                playerGameChannel.send(PLAYER3 to CardPass(2 of Suit.SPADES, NumberedCard.QUEEN of Suit.CLUBS, 3 of Suit.HEARTS))
+                playerGameChannel.send(PLAYER4 to CardPass(ThreeWayPass(Dog, NumberedCard.QUEEN of Suit.HEARTS, Dragon)))
+                playerGameChannel.send(PLAYER2 to CardPass(ThreeWayPass(7 of Suit.HEARTS, NumberedCard.KING of Suit.CLUBS, 9 of Suit.HEARTS)))
+                playerGameChannel.send(PLAYER1 to CardPass(ThreeWayPass(2 of Suit.HEARTS, NumberedCard.KING of Suit.SPADES, 3 of Suit.SPADES)))
+                playerGameChannel.send(PLAYER3 to CardPass(ThreeWayPass(2 of Suit.SPADES, NumberedCard.QUEEN of Suit.CLUBS, 3 of Suit.HEARTS)))
 
                 assertNext(PLAYER1, CardsHaveBeenPassed::class)
                 assertNext(PLAYER2, CardsHaveBeenPassed::class)
@@ -383,8 +382,8 @@ class TaiPanTest {
 
             launch {
                 withTimeout(2.seconds) {
-                    val gameResult = game.play(GameContext(players, { game.state }, allPlayers, gamePlayerChannel, playerGameChannel))
-                    assertEquals(Team2Won, gameResult)
+                    val gameResult = GameContext(players, game, allPlayers, gamePlayerChannel, playerGameChannel).playGame()
+                    assertEquals(TaiPanFinalScore(TwoTeamTeamId.TEAM2, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 0)), gameResult)
                 }
             }
 

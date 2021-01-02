@@ -4,27 +4,26 @@ import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import nl.hiddewieringa.game.core.Player
+import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.TaiPanGameParameters
-import nl.hiddewieringa.game.taipan.TaiPanGameResult
 import nl.hiddewieringa.game.taipan.card.*
 
-typealias TaiPanPlayer = Player<TaiPanGameParameters, TaiPanEvent, TaiPanState, TaiPanPlayerActions, TaiPanGameResult>
-
-class SimpleTaiPanPlayer : TaiPanPlayer {
+class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TwoTeamPlayerId, TaiPanState> {
 
     private lateinit var hand: CardSet
     private var lastPlayedCards: CardCombination? = null
 
-    override fun initialize(parameters: TaiPanGameParameters, initialState: TaiPanState, eventBus: ReceiveChannel<Pair<TaiPanEvent, TaiPanState>>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
+    override fun initialize(parameters: TaiPanGameParameters, playerId: TwoTeamPlayerId, initialState: TaiPanState, eventBus: ReceiveChannel<Pair<TaiPanEvent, TaiPanState>>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
         {
-            eventBus.consumeEach { (event, state) ->
+            eventBus.consumeEach { (event, _) ->
                 when (event) {
                     is CardsHaveBeenDealt -> {
                         hand = event.cards
                     }
                     is CardsHaveBeenPassed -> {
-                        hand = event.cards
+//                        hand = state
+//                        hand = event.pass
                     }
                     is RoundBegan -> {
                     }
@@ -58,13 +57,17 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
                     }
                     MahjongWishFulfilled -> {
                     }
+                    is PlayerPassedDragon -> {
+                    }
+                    is GameEnded -> {
+                    }
                 }
             }
         }
 
     private fun passCards(): CardPass {
         val ordered = hand.toList()
-        return CardPass(ordered[0], ordered[1], ordered[2])
+        return CardPass(ThreeWayPass(ordered[0], ordered[1], ordered[2]))
     }
 
     /**
@@ -89,7 +92,4 @@ class SimpleTaiPanPlayer : TaiPanPlayer {
      */
     private fun dragonPass(): DragonPass =
         DragonPass.LEFT
-
-    override fun gameEnded(result: TaiPanGameResult) {
-    }
 }

@@ -1,26 +1,33 @@
 package nl.hiddewieringa.game.core
 
-import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+
+// interface SS <PID : PlayerId, A : PlayerActions, E : Event> :  State, GameState<PID, A, E>
+
+class StatefulJob<S : State<S>>(
+    private val job: Deferred<S>,
+    val stateSupplier: () -> S
+) : Deferred<S> by job
 
 class GameManager {
 
     // TODO maybe refactor factories to simple parameter passing?
-    suspend fun <M : GameParameters, P : Player<M, E, S, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState>
+    suspend fun <M : GameParameters, P : Player<M, E, A, PID, S>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : State<S>>
     play(
-        gameFactory: (M) -> Game<M, P, A, E, R, PID, PC, S>,
+//        gameFactory: (M) -> Game<M, P, A, E, R, PID, PC, S>,
+        gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
         parameters: M
-    ): R {
+    ): StatefulJob<S> {
         val players = playerFactory()
-        val game = gameFactory(parameters)
+//        val game = gameFactory(parameters)
 
         return coroutineScope {
+            // TODO why unlimited capacity? Would be better to meet-and-greet for delivering events and actions (?)
             val gameReceiveChannel = Channel<Pair<PID, A>>(capacity = UNLIMITED)
             val gameSendChannel = Channel<Triple<PID, E, S>>(capacity = UNLIMITED)
             val gameSendAllChannel = Channel<Pair<E, S>>(capacity = UNLIMITED)
@@ -43,21 +50,25 @@ class GameManager {
                 }
             }
 
+            // Create the game context, the stateful wrapper that encapsulates all game interaction and state
+            val context = GameContext(players, gameStateFactory(parameters), gameSendAllChannel, gameSendChannel, gameReceiveChannel)
+
             players.forEach { playerId ->
-                val playerProducer = players.player(playerId).initialize(parameters, game.state, playerChannels.getValue(playerId))
+                val playerProducer = players.player(playerId).initialize(parameters, playerId, context.state, playerChannels.getValue(playerId))
                 val playerSendChannel = produce(coroutineContext, UNLIMITED, playerProducer)
                 launch {
                     playerSendChannel.consumeEach { gameReceiveChannel.send(playerId to it) }
                 }
             }
 
-            val result = game.play(GameContext(players, { game.state }, gameSendAllChannel, gameSendChannel, gameReceiveChannel))
+            // Play the game, wait for the result
+            val job = async {
+                val result = context.playGame()
+                coroutineContext.cancelChildren()
+                result
+            }
 
-            // The game is done, players must exit
-            players.forEach { players.player(it).gameEnded(result) }
-            coroutineContext.cancelChildren()
-
-            result
+            StatefulJob(job, context::state)
         }
     }
 }

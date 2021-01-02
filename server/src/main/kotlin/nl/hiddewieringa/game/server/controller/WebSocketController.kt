@@ -13,7 +13,6 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.Event
-import nl.hiddewieringa.game.core.GameState
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import org.springframework.context.annotation.Bean
@@ -32,7 +31,7 @@ import java.util.*
 private val logger = KotlinLogging.logger {}
 
 data class WrappedAction<A : PlayerActions>(val action: A)
-data class WrappedEvent<E : Event, S : GameState>(val event: E?, val state: S)
+data class WrappedEvent(val event: Any?, val state: Any)
 
 @Component
 class WebSocketController(
@@ -86,13 +85,13 @@ class WebSocketController(
             .doFinally { playerSlots.decreaseReference() }
     }
 
-    private fun <E : Event, S : GameState> WebSocketSession.eventMessage(data: E, state: S) =
+    private fun WebSocketSession.eventMessage(data: Any, state: Any) =
         textMessage(objectMapper.writeValueAsString(WrappedEvent(data, state)))
 
     private fun <A : PlayerActions> readAction(message: WebSocketMessage): A =
         objectMapper.readValue<WrappedAction<A>>(message.payloadAsText).action
 
-    private fun <S : GameState> WebSocketSession.stateMessage(state: S) =
+    private fun WebSocketSession.stateMessage(state: Any) =
         textMessage(objectMapper.writeValueAsString(WrappedEvent(null, state)))
 
     companion object {

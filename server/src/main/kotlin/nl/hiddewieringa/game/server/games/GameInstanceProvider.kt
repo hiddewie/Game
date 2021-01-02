@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
 
-class PlayerSlots<A : PlayerActions, E : Event, S : GameState>(
+class PlayerSlots<A : PlayerActions, E : Event, S : State<S>>(
     val sendChannel: SendChannel<A>,
     val receiveChannel: ReceiveChannel<Pair<E, S>>,
 ) {
@@ -31,7 +31,7 @@ class PlayerSlots<A : PlayerActions, E : Event, S : GameState>(
     }
 }
 
-class GameInstance<A : PlayerActions, E : Event, S : GameState>(
+class GameInstance<A : PlayerActions, E : Event, S : State<S>>(
     val id: UUID,
     val gameSlug: String,
     val playerSlots: Map<UUID, PlayerSlots<A, E, S>>,
@@ -42,12 +42,12 @@ class GameInstance<A : PlayerActions, E : Event, S : GameState>(
         get() = playerSlots.values.any { it.referenceCount.get() == 0 }
 }
 
-class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, R : GameResult, S : GameState> : Player<M, E, S, A, R> {
+class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : State<S>> : Player<M, E, A, PlayerId, S> {
 
     val eventChannel = Channel<Pair<E, S>>(capacity = 0)
     val actionChannel = Channel<A>(capacity = 0)
 
-    override fun initialize(parameters: M, initialState: S, eventBus: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
+    override fun initialize(parameters: M, playerId: PlayerId, initialState: S, eventBus: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
         {
             launch {
                 actionChannel.consumeEach {
@@ -60,12 +60,6 @@ class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, R : Game
                 }
             }
         }
-
-    override fun gameEnded(result: R) {
-        // TODO close channels!
-//        actionChannel.close()
-//        eventChannel.close()
-    }
 }
 
 @Component
@@ -76,29 +70,34 @@ class GameInstanceProvider(
     private val instances: MutableMap<UUID, GameInstance<*, *, *>> = mutableMapOf()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
-    fun <M : GameParameters, P : Player<M, E, S, A, R>, A : PlayerActions, E : Event, R : GameResult, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState>
-    start(gameDetails: GameDetails<M, P, A, E, R, PID, PC, S>): UUID {
+    fun <M : GameParameters, P : Player<M, E, A, PID, S>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : State<S>>
+    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S>): UUID {
 
         val instanceId = UUID.randomUUID()
         val parameters = gameDetails.defaultParameters
 
         // We need a reference to the players for exposing the channels
-        val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, R, S>() as P })
+        val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, S>() as P })
         // We need a reference to the game to expose the latest game state
-        val game = gameDetails.gameFactory(parameters)
+//        val game = gameDetails.gameFactory(parameters)
 
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
+        var stateSupplier: (() -> S)? = null
         GlobalScope.launch(threadPoolDispatcher) {
 
             logger.info("Launching game ${gameDetails.slug} instance $instanceId and parameters $parameters")
 
-            val gameResult = gameManager.play(
-                { game },
+            val gameJob = gameManager.play(
+//                { game },
+                gameDetails.gameFactory,
                 { playerConfiguration },
                 parameters,
             )
+            stateSupplier = gameJob.stateSupplier
+
+            val gameResult = gameJob.await()
 
             // TODO store game result
             println("Game result of $instanceId: $gameResult")
@@ -106,7 +105,7 @@ class GameInstanceProvider(
 
         val playerSlots = playerConfiguration
             .map {
-                val player = playerConfiguration.player(it) as WebsocketPlayer<M, A, E, R, S>
+                val player = playerConfiguration.player(it) as WebsocketPlayer<M, A, E, S>
                 UUID.randomUUID() to PlayerSlots(
                     player.actionChannel,
                     player.eventChannel,
@@ -119,11 +118,11 @@ class GameInstanceProvider(
             gameDetails.slug,
 //            true,
             playerSlots,
-            game::state,
+            stateSupplier!!,
 //            gameDetails.actionClass
         )
 
-        logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots, current game state ${game.state}")
+        logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots")
 
         return instanceId
     }

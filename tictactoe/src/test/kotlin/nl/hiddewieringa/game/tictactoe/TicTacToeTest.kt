@@ -5,6 +5,8 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.runBlocking
 import nl.hiddewieringa.game.core.GameManager
+import nl.hiddewieringa.game.core.Player
+import nl.hiddewieringa.game.core.TwoPlayerId
 import nl.hiddewieringa.game.core.TwoPlayers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -18,7 +20,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
-                ::TicTacToe,
+                { TicTacToePlay() },
                 {
                     TwoPlayers(
                         StubbedPlayer(listOf(Location(0, 0), Location(1, 2), Location(1, 1), Location(2, 0), Location(2, 1))),
@@ -38,7 +40,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
-                ::TicTacToe,
+                { TicTacToePlay() },
                 {
                     TwoPlayers(
                         StubbedPlayer(listOf(Location(0, 0), Location(0, 0))),
@@ -48,7 +50,7 @@ class TicTacToeTest {
                 TicTacToeGameParameters
             )
 
-            assertEquals(Player2Won, gameResult)
+            assertEquals(PlayerWon(TwoPlayerId.PLAYER2), gameResult)
         }
     }
 
@@ -58,7 +60,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
-                ::TicTacToe,
+                { TicTacToePlay() },
                 {
                     TwoPlayers(
                         StubbedPlayer(listOf(Location(0, 0), Location(0, 1), Location(0, 2))),
@@ -68,29 +70,44 @@ class TicTacToeTest {
                 TicTacToeGameParameters
             )
 
-            assertEquals(Player1Won, gameResult)
+            assertEquals(PlayerWon(TwoPlayerId.PLAYER1), gameResult)
         }
     }
 
-    class StubbedPlayer(locations: List<Location>) : TicTacToePlayer {
+    class StubbedPlayer(locations: List<Location>) : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> {
 
         private val locationsQueue = ArrayDeque(locations)
 
         private fun play(): Location =
             locationsQueue.pop()
 
-        override fun initialize(parameters: TicTacToeGameParameters, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+        override fun initialize(parameters: TicTacToeGameParameters, playerId: TwoPlayerId, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
             {
-                eventBus.consumeEach { (event, _) ->
-                    when (event) {
-                        is PlaceMark -> send(PlaceMarkLocation(play()))
-                        else -> {
+                when (initialState) {
+                    is TicTacToePlay -> {
+                        if (initialState.playerToPlay == playerId) {
+                            send(PlaceMarkLocation(play()))
+                        }
+                    }
+                    is PlayerWon -> {
+                    }
+                    NoPlayerWon -> {
+                    }
+                }
+
+                eventBus.consumeEach { (_, state) ->
+                    when (state) {
+                        is TicTacToePlay -> {
+                            if (state.playerToPlay == playerId) {
+                                send(PlaceMarkLocation(play()))
+                            }
+                        }
+                        is PlayerWon -> {
+                        }
+                        NoPlayerWon -> {
                         }
                     }
                 }
             }
-
-        override fun gameEnded(result: TicTacToeGameResult) {
-        }
     }
 }

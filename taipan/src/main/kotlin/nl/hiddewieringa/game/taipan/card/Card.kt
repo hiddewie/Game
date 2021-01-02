@@ -108,3 +108,11 @@ object Mahjong : Card(0) {
 
     const val value = 1
 }
+
+data class ThreeWayPass(val left: Card, val forward: Card, val right: Card) {
+    init {
+        require(left != forward) { "Left should not be the same card as forward" }
+        require(forward != right) { "Right should not be the same card as forward" }
+        require(left != right) { "Left should not be the same card as right" }
+    }
+}

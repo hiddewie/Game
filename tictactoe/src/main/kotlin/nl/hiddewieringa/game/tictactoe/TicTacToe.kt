@@ -5,99 +5,112 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import nl.hiddewieringa.game.core.*
 
-typealias TicTacToeGameContext = GameContext<TicTacToePlayerActions, TicTacToeEvent, TwoPlayerId, TwoPlayers<TicTacToePlayer>, TicTacToeState>
+sealed class TicTacToeState : State<TicTacToeState>
 
-class TicTacToeState(
+data class TicTacToePlay(
     val board: Array<Array<GameMark?>>,
-) : GameState {
+    val playerToPlay: TwoPlayerId,
+) : TicTacToeState(), IntermediateGameState<TwoPlayerId, TicTacToePlayerActions, TicTacToeEvent, TicTacToeState> {
 
     constructor() : this(
         arrayOf(
             arrayOf(null, null, null),
             arrayOf(null, null, null),
             arrayOf(null, null, null)
-        )
+        ),
+        TwoPlayerId.PLAYER1
     )
 
-    fun with(event: TicTacToeEvent): TicTacToeState =
+    override fun applyEvent(event: TicTacToeEvent): TicTacToeState =
         when (event) {
-            PlaceMark -> this
+            IllegalMove -> when (playerToPlay) {
+                TwoPlayerId.PLAYER1 -> PlayerWon(TwoPlayerId.PLAYER2)
+                TwoPlayerId.PLAYER2 -> PlayerWon(TwoPlayerId.PLAYER1)
+            }
+
             is PlayerPlacedMark -> {
                 val newBoard = board.map { it.copyOf() }.toTypedArray()
                 newBoard[event.location.x][event.location.y] = event.mark
-                TicTacToeState(newBoard)
+
+                TicTacToePlay(
+                    newBoard,
+                    nextPlayer(event.player)
+                )
             }
+
+            is GameEnded ->
+                if (event.playerWon == null) {
+                    NoPlayerWon
+                } else {
+                    PlayerWon(event.playerWon)
+                }
         }
-}
 
-class TicTacToe(
-    private val parameters: TicTacToeGameParameters,
-) : Game<
-    TicTacToeGameParameters,
-    TicTacToePlayer,
-    TicTacToePlayerActions,
-    TicTacToeEvent,
-    TicTacToeGameResult,
-    TwoPlayerId,
-    TwoPlayers<TicTacToePlayer>,
-    TicTacToeState,
-    > {
+    override fun processPlayerAction(playerId: TwoPlayerId, action: TicTacToePlayerActions): TicTacToeEvent =
+        // TODO add timing checks (withTimeout)
+        when {
+            playerId == playerToPlay && action is PlaceMarkLocation -> {
+                val played = action.location
+                // TODO replace all println with actual logging
+                println("Player $playerId played $played")
+                if (board[played.x][played.y] != null) {
+                    IllegalMove
+                } else {
+                    val mark = markForPlayer(playerId)
+                    PlayerPlacedMark(playerId, mark, played)
+                }
+            }
 
-    override var state = TicTacToeState()
+            else ->
+                IllegalMove
+        }
 
-    private fun noPlayerWon(): Boolean =
-        state.board.all { it.all { value -> value != null } }
-
-    private fun playerWon(location: Location, mark: GameMark): Boolean =
-        (0 until 3).all { i -> state.board[location.x][i] == mark } ||
-            (0 until 3).all { i -> state.board[i][location.y] == mark } ||
-            (0 until 3).all { i -> state.board[i][i] == mark } ||
-            (0 until 3).all { i -> state.board[i][2 - i] == mark }
-
-    override suspend fun play(context: TicTacToeGameContext): TicTacToeGameResult {
-
-        val markForPlayer = mapOf(
-            TwoPlayerId.PLAYER1 to Cross,
-            TwoPlayerId.PLAYER2 to Circle
+    override val gameDecisions: List<GameDecision<TicTacToeEvent>> =
+        listOf(
+            GameDecision(noPlayerWon(board)) {
+                GameEnded(null)
+            },
+            playerWon(board)
+                .let { wonMark ->
+                    GameDecision(wonMark != null) {
+                        GameEnded(playerForMark(wonMark!!))
+                    }
+                },
         )
 
-        while (true) {
-            context.players.forEach { playerId ->
-                // TODO add timing checks (withTimeout)
-                context.sendToPlayer(playerId, PlaceMark)
-                val (receivedPlayerId, action) = context.receiveFromPlayer()
-                val played = when {
-                    receivedPlayerId == playerId && action is PlaceMarkLocation -> action.location
-                    else -> TODO()
-                }
-                println("Player $playerId played $played")
-                if (state.board[played.x][played.y] != null) {
-                    return if (playerId == TwoPlayerId.PLAYER1) {
-                        Player2Won
-                    } else {
-                        Player1Won
-                    }
-                }
+    private fun noPlayerWon(board: Array<Array<GameMark?>>): Boolean =
+        board.all { it.all { value -> value != null } }
 
-                val mark = markForPlayer.getValue(playerId)
-                val event = PlayerPlacedMark(playerId, mark, played)
-                state = state.with(event)
-                context.sendToAllPlayers(event)
-
-                if (noPlayerWon()) {
-                    return NoPlayerWon
-                }
-
-                if (playerWon(played, mark)) {
-                    return if (playerId == TwoPlayerId.PLAYER1) {
-                        Player1Won
-                    } else {
-                        Player2Won
-                    }
-                }
-            }
+    private fun playerWon(board: Array<Array<GameMark?>>): GameMark? =
+        when {
+            playerWon(board, Circle) -> Circle
+            playerWon(board, Cross) -> Cross
+            else -> null
         }
-    }
+
+    private fun playerWon(board: Array<Array<GameMark?>>, mark: GameMark): Boolean =
+        (0 until 3).any { j -> (0 until 3).all { i -> board[j][i] == mark } } ||
+            (0 until 3).any { j -> (0 until 3).all { i -> board[i][j] == mark } } ||
+            (0 until 3).all { i -> board[i][i] == mark } ||
+            (0 until 3).all { i -> board[i][2 - i] == mark }
+
+    private fun markForPlayer(playerId: TwoPlayerId): GameMark =
+        when (playerId) {
+            TwoPlayerId.PLAYER1 -> Cross
+            TwoPlayerId.PLAYER2 -> Circle
+        }
+
+    private fun playerForMark(mark: GameMark): TwoPlayerId =
+        when (mark) {
+            Cross -> TwoPlayerId.PLAYER1
+            Circle -> TwoPlayerId.PLAYER2
+        }
+
+    private fun nextPlayer(playerId: TwoPlayerId) =
+        when (playerId) {
+            TwoPlayerId.PLAYER1 -> TwoPlayerId.PLAYER2
+            TwoPlayerId.PLAYER2 -> TwoPlayerId.PLAYER1
+        }
 }
 
 sealed class GameMark
@@ -106,41 +119,52 @@ object Circle : GameMark()
 data class Location(val x: Int, val y: Int)
 
 sealed class TicTacToeEvent : Event
-object PlaceMark : TicTacToeEvent()
 data class PlayerPlacedMark(val player: TwoPlayerId, val mark: GameMark, val location: Location) : TicTacToeEvent()
+object IllegalMove : TicTacToeEvent()
+data class GameEnded(val playerWon: TwoPlayerId?) : TicTacToeEvent()
 
 object TicTacToeGameParameters : GameParameters
 
 sealed class TicTacToePlayerActions : PlayerActions
 data class PlaceMarkLocation(val location: Location) : TicTacToePlayerActions()
 
-sealed class TicTacToeGameResult : GameResult
-object Player1Won : TicTacToeGameResult()
-object Player2Won : TicTacToeGameResult()
+sealed class TicTacToeGameResult : TicTacToeState()
+data class PlayerWon(val player: TwoPlayerId) : TicTacToeGameResult()
 object NoPlayerWon : TicTacToeGameResult()
 
-interface TicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToeState, TicTacToePlayerActions, TicTacToeGameResult>
+class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> {
 
-class FreeSpaceTicTacToePlayer : TicTacToePlayer {
-
-    private lateinit var gameState: Array<Array<GameMark?>>
-
-    override fun initialize(parameters: TicTacToeGameParameters, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+    override fun initialize(parameters: TicTacToeGameParameters, playerId: TwoPlayerId, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
         {
-            eventBus.consumeEach { (event, state) ->
-                gameState = state.board
-                when (event) {
-                    is PlayerPlacedMark -> {
+            when (initialState) {
+                is TicTacToePlay -> {
+                    if (initialState.playerToPlay == playerId) {
+                        send(PlaceMarkLocation(play(initialState.board)))
                     }
-                    is PlaceMark -> {
-                        send(PlaceMarkLocation(play()))
+                }
+                is PlayerWon -> {
+                }
+                NoPlayerWon -> {
+                }
+            }
+
+            eventBus.consumeEach { (_, state) ->
+                when (state) {
+                    is TicTacToePlay -> {
+                        if (state.playerToPlay == playerId) {
+                            send(PlaceMarkLocation(play(state.board)))
+                        }
+                    }
+                    is PlayerWon -> {
+                    }
+                    NoPlayerWon -> {
                     }
                 }
             }
         }
 
-    private fun play(): Location {
-        gameState.forEachIndexed { i, row ->
+    private fun play(board: Array<Array<GameMark?>>): Location {
+        board.forEachIndexed { i, row ->
             row.forEachIndexed { j, item ->
                 if (item === null) {
                     return Location(i, j)
@@ -148,8 +172,5 @@ class FreeSpaceTicTacToePlayer : TicTacToePlayer {
             }
         }
         throw IllegalStateException()
-    }
-
-    override fun gameEnded(result: TicTacToeGameResult) {
     }
 }

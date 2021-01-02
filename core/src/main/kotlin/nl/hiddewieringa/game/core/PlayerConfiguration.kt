@@ -54,11 +54,13 @@ data class TwoTeams<P : Player<*, *, *, *, *>>(
         }
 }
 
-enum class TwoTeamPlayerId : PlayerId {
-    PLAYER1,
-    PLAYER2,
-    PLAYER3,
-    PLAYER4,
+enum class TwoTeamPlayerId(
+    val team: TwoTeamTeamId,
+) : PlayerId {
+    PLAYER1(TwoTeamTeamId.TEAM1),
+    PLAYER2(TwoTeamTeamId.TEAM2),
+    PLAYER3(TwoTeamTeamId.TEAM1),
+    PLAYER4(TwoTeamTeamId.TEAM2),
 }
 
 interface TeamId
