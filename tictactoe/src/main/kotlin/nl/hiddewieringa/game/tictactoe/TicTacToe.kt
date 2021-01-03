@@ -5,7 +5,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import nl.hiddewieringa.game.core.*
 
-sealed class TicTacToeState : State<TicTacToeState>
+sealed class TicTacToeState : GameState<TicTacToeState>
 
 data class TicTacToePlay(
     val board: Array<Array<GameMark?>>,
@@ -47,11 +47,9 @@ data class TicTacToePlay(
         }
 
     override fun processPlayerAction(playerId: TwoPlayerId, action: TicTacToePlayerActions): TicTacToeEvent =
-        // TODO add timing checks (withTimeout)
         when {
             playerId == playerToPlay && action is PlaceMarkLocation -> {
                 val played = action.location
-                // TODO replace all println with actual logging
                 println("Player $playerId played $played")
                 if (board[played.x][played.y] != null) {
                     IllegalMove
@@ -134,7 +132,7 @@ object NoPlayerWon : TicTacToeGameResult()
 
 class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> {
 
-    override fun initialize(parameters: TicTacToeGameParameters, playerId: TwoPlayerId, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+    override fun play(parameters: TicTacToeGameParameters, playerId: TwoPlayerId, initialState: TicTacToeState, events: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
         {
             when (initialState) {
                 is TicTacToePlay -> {
@@ -148,7 +146,7 @@ class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent,
                 }
             }
 
-            eventBus.consumeEach { (_, state) ->
+            events.consumeEach { (_, state) ->
                 when (state) {
                     is TicTacToePlay -> {
                         if (state.playerToPlay == playerId) {

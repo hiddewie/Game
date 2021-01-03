@@ -9,7 +9,7 @@ import kotlinx.coroutines.channels.produce
 /**
  * A job that maintains an observable state while it is running
  */
-class StatefulJob<S : State<S>>(
+class StatefulJob<S : GameState<S>>(
     private val job: Deferred<S>,
     val stateSupplier: () -> S
 ) : Deferred<S> by job
@@ -21,7 +21,7 @@ class StatefulJob<S : State<S>>(
  */
 class GameManager {
 
-    suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : State<S>, PS>
+    suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS>
     play(
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
@@ -49,7 +49,7 @@ class GameManager {
             val context = GameContext(players, gameStateFactory(parameters), gameSendChannel, gameReceiveChannel, playerState)
 
             players.forEach { playerId ->
-                val playerProducer = players.player(playerId).initialize(parameters, playerId, playerState(context.state), playerChannels.getValue(playerId))
+                val playerProducer = players.player(playerId).play(parameters, playerId, playerState(context.state), playerChannels.getValue(playerId))
                 val playerSendChannel = produce(coroutineContext, UNLIMITED, playerProducer)
                 launch {
                     playerSendChannel.consumeEach { gameReceiveChannel.send(playerId to it) }

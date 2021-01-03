@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
 
-class PlayerSlots<A : PlayerActions, E : Event, S : State<S>>(
+class PlayerSlots<A : PlayerActions, E : Event, S>(
     val sendChannel: SendChannel<A>,
     val receiveChannel: ReceiveChannel<Pair<E, S>>,
 ) {
@@ -31,7 +31,7 @@ class PlayerSlots<A : PlayerActions, E : Event, S : State<S>>(
     }
 }
 
-class GameInstance<A : PlayerActions, E : Event, S : State<S>>(
+class GameInstance<A : PlayerActions, E : Event, S : Any>(
     val id: UUID,
     val gameSlug: String,
     val playerSlots: Map<UUID, PlayerSlots<A, E, S>>,
@@ -42,12 +42,12 @@ class GameInstance<A : PlayerActions, E : Event, S : State<S>>(
         get() = playerSlots.values.any { it.referenceCount.get() == 0 }
 }
 
-class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : State<S>> : Player<M, E, A, PlayerId, S> {
+class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any> : Player<M, E, A, PlayerId, S> {
 
     val eventChannel = Channel<Pair<E, S>>(capacity = 0)
     val actionChannel = Channel<A>(capacity = 0)
 
-    override fun initialize(parameters: M, playerId: PlayerId, initialState: S, eventBus: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
+    override fun play(parameters: M, playerId: PlayerId, initialState: S, events: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
         {
             launch {
                 actionChannel.consumeEach {
@@ -55,7 +55,7 @@ class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Stat
                 }
             }
             launch {
-                eventBus.consumeEach { (event, state) ->
+                events.consumeEach { (event, state) ->
                     eventChannel.send(event to state)
                 }
             }
@@ -70,14 +70,14 @@ class GameInstanceProvider(
     private val instances: MutableMap<UUID, GameInstance<*, *, *>> = mutableMapOf()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
-    fun <M : GameParameters, P : Player<M, E, A, PID, S>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : State<S>>
-    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S>): UUID {
+    fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
+    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
 
         val instanceId = UUID.randomUUID()
         val parameters = gameDetails.defaultParameters
 
         // We need a reference to the players for exposing the channels
-        val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, S>() as P })
+        val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, PS>() as P })
 
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
@@ -91,7 +91,7 @@ class GameInstanceProvider(
                 gameDetails.gameFactory,
                 { playerConfiguration },
                 parameters,
-                { it }, // TODO make projection
+                gameDetails.playerState,
             )
             stateSupplier = gameJob.stateSupplier
 
@@ -103,7 +103,7 @@ class GameInstanceProvider(
 
         val playerSlots = playerConfiguration
             .map {
-                val player = playerConfiguration.player(it) as WebsocketPlayer<M, A, E, S>
+                val player = playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>
                 UUID.randomUUID() to PlayerSlots(
                     player.actionChannel,
                     player.eventChannel,
@@ -114,10 +114,8 @@ class GameInstanceProvider(
         instances[instanceId] = GameInstance(
             instanceId,
             gameDetails.slug,
-//            true,
             playerSlots,
-            stateSupplier!!,
-//            gameDetails.actionClass
+            { gameDetails.playerState(stateSupplier!!()) },
         )
 
         logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots")

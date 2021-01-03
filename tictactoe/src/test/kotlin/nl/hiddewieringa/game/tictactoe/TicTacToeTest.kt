@@ -84,7 +84,7 @@ class TicTacToeTest {
         private fun play(): Location =
             locationsQueue.pop()
 
-        override fun initialize(parameters: TicTacToeGameParameters, playerId: TwoPlayerId, initialState: TicTacToeState, eventBus: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
+        override fun play(parameters: TicTacToeGameParameters, playerId: TwoPlayerId, initialState: TicTacToeState, events: ReceiveChannel<Pair<TicTacToeEvent, TicTacToeState>>): suspend ProducerScope<TicTacToePlayerActions>.() -> Unit =
             {
                 when (initialState) {
                     is TicTacToePlay -> {
@@ -98,7 +98,7 @@ class TicTacToeTest {
                     }
                 }
 
-                eventBus.consumeEach { (_, state) ->
+                events.consumeEach { (_, state) ->
                     when (state) {
                         is TicTacToePlay -> {
                             if (state.playerToPlay == playerId) {

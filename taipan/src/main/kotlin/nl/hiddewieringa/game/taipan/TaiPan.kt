@@ -6,7 +6,7 @@ import java.util.*
 import kotlin.Comparator
 import kotlin.random.Random
 
-sealed class TaiPanState : State<TaiPanState>
+sealed class TaiPanState : GameState<TaiPanState>
 
 private fun nextPlayer(playerId: TwoTeamPlayerId): TwoTeamPlayerId =
     when (playerId) {
@@ -193,7 +193,8 @@ data class TaiPan(
     ) : this(
         parameters,
         points,
-        // TODO This might not generate enough permutations to make all possible 52! shufflings possible!
+        // This might not generate enough permutations to make all possible 52! shuffles possible!
+        //   We would need 226 bits of entropy to be able to generate all combinations
         //   See https://www.wikiwand.com/en/Fisher%E2%80%93Yates_shuffle#/Pseudorandom_generators
         fullDeck.shuffled(Random(parameters.seed + roundIndex))
             .let { shuffledCards ->
@@ -583,7 +584,6 @@ data class TaiPanPlayTrick(
                 TrickWon(lastPlayedCards!!.first, nextPlayer(nextPlayer(lastPlayedCards.first)))
             },
             GameDecision(playerCards.getValue(currentPlayer).isEmpty()) {
-                // TODO build into 'next player' after cards played
                 println("Player $currentPlayer has no cards and folds")
                 PlayerFolds(currentPlayer)
             },

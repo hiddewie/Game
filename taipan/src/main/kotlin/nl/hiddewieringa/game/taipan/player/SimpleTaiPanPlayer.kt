@@ -14,9 +14,9 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
     private lateinit var hand: CardSet
     private var lastPlayedCards: CardCombination? = null
 
-    override fun initialize(parameters: TaiPanGameParameters, playerId: TwoTeamPlayerId, initialState: TaiPanState, eventBus: ReceiveChannel<Pair<TaiPanEvent, TaiPanState>>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
+    override fun play(parameters: TaiPanGameParameters, playerId: TwoTeamPlayerId, initialState: TaiPanState, events: ReceiveChannel<Pair<TaiPanEvent, TaiPanState>>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
         {
-            eventBus.consumeEach { (event, _) ->
+            events.consumeEach { (event, _) ->
                 when (event) {
                     is CardsHaveBeenDealt -> {
                         hand = event.cards

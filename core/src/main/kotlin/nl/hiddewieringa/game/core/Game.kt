@@ -9,7 +9,7 @@ import java.lang.IllegalStateException
  * When the `playGame` method is called, the state will be updated in a loop, until a terminal state is reached.
  * Every event is published to all players, along with the projected game state.
  */
-class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : State<S>, PS>(
+class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>, PS>(
     private val playerIds: Set<PID>,
     initialState: S,
     private val playerChannel: SendChannel<Triple<PID, E, PS>>,
@@ -43,6 +43,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : State<S>, PS
                         println("Game loop: State update processed")
                     } else {
                         println("Game loop: Receiving player action")
+                        // TODO add timing checks (withTimeout)
                         val (playerId, action) = playerActions.receive()
                         println("Game loop: Player $playerId played $action")
                         val event = (currentState as IntermediateGameState<PID, A, E, S>).processPlayerAction(playerId, action)
@@ -81,7 +82,7 @@ class GameDecision<E>(
     val event: () -> E
 )
 
-interface IntermediateGameState<PID : PlayerId, A : PlayerActions, E : Event, S : State<S>> : GameStage<PID, A, E> {
+interface IntermediateGameState<PID : PlayerId, A : PlayerActions, E : Event, S : GameState<S>> : GameStage<PID, A, E> {
 
     val gameDecisions: List<GameDecision<E>>
 
@@ -91,8 +92,7 @@ interface IntermediateGameState<PID : PlayerId, A : PlayerActions, E : Event, S 
         gameDecisions.any(GameDecision<E>::condition)
 }
 
-// TODO rename GameState
-interface State<S : State<S>>
+interface GameState<S : GameState<S>>
 
 interface GameParameters
 
