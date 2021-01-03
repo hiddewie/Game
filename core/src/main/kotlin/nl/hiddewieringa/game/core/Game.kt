@@ -5,36 +5,19 @@ import kotlinx.coroutines.channels.SendChannel
 import java.lang.IllegalStateException
 
 /**
- * Interface for a game that can be played by certain players.
- *
- * This interface models the interaction of the players with the game state, and implements the game logic by reacting to player actions.
- * The players actions cause game events, which are processed applied to the game state to produce a new game state.
+ * A stateful wrapper around game state, combined with the player interaction.
+ * When the `playGame` method is called, the state will be updated in a loop, until a terminal state is reached.
+ * Every event is published to all players, along with the projected game state.
  */
-// interface Game<
-//        M : GameParameters,
-//        P : Player<M, E, S, A, R>,
-//        A : PlayerActions,
-//        E : Event,
-//        R : GameResult,
-//        PID : PlayerId,
-//        PC : PlayerConfiguration<PID, P>,
-//        S : GameState<PID,A,E>> {
-//
-//    val initialState: GameState<PID, A, E>
-//
-//    suspend fun play(context: GameContext<A, E, PID, PC, S>): R
-// }
-
-class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, *>, S : State<S>>(
-    // TODO remove
-    val players: PC,
+class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : State<S>, PS>(
+    private val playerIds: Set<PID>,
     initialState: S,
-    private val sendAllChannel: SendChannel<Pair<E, S>>,
-    private val playerChannel: SendChannel<Triple<PID, E, S>>,
-    private val playerActions: ReceiveChannel<Pair<PID, A>>
+    private val playerChannel: SendChannel<Triple<PID, E, PS>>,
+    private val playerActions: ReceiveChannel<Pair<PID, A>>,
+    private val playerState: (S) -> PS,
 ) {
 
-    var state = initialState
+    var state: S = initialState
 
     suspend fun playGame(): S {
         println("Starting game loop")
@@ -53,11 +36,13 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfi
 
                         state = (currentState as IntermediateGameState<PID, A, E, S>).applyEvent(decisionEvent)
 
-                        // TODO send events to players which are influenced by the new state!
-                        sendAllChannel.send(decisionEvent to state)
+                        playerIds.forEach { playerId ->
+                            playerChannel.send(Triple(playerId, decisionEvent, playerState(state)))
+                        }
 
                         println("Game loop: State update processed")
                     } else {
+                        println("Game loop: Receiving player action")
                         val (playerId, action) = playerActions.receive()
                         println("Game loop: Player $playerId played $action")
                         val event = (currentState as IntermediateGameState<PID, A, E, S>).processPlayerAction(playerId, action)
@@ -65,8 +50,10 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfi
                         println("Game loop: Action caused $event")
                         state = (currentState as IntermediateGameState<PID, A, E, S>).applyEvent(event)
 
-                        // TODO send events to players which are influenced by the new state!
-                        sendAllChannel.send(event to state)
+                        playerIds.forEach { playerId ->
+                            // TODO filter sensitive event contents
+                            playerChannel.send(Triple(playerId, event, playerState(state)))
+                        }
 
                         println("Game loop: State update processed")
                     }
@@ -82,12 +69,6 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfi
 
         throw IllegalStateException("The loop count exceeded the maximum value $loop")
     }
-}
-
-// TODO move to funcitonal tools file
-sealed class Either<L, R> {
-    class Left<L, R>(val left: L) : Either<L, R>()
-    class Right<L, R>(val right: R) : Either<L, R>()
 }
 
 interface GameStage<PID : PlayerId, A : PlayerActions, E : Event> {
@@ -110,22 +91,9 @@ interface IntermediateGameState<PID : PlayerId, A : PlayerActions, E : Event, S 
         gameDecisions.any(GameDecision<E>::condition)
 }
 
-// TODO split into public state and player specific state
-// typealias GameState<PID , A , E, S > = Either<
-//        IntermediateGameState<PID , A , E, S >,
-//        GameResult<S>
-//        >
-
 // TODO rename GameState
 interface State<S : State<S>>
 
 interface GameParameters
 
 interface PlayerActions
-
-// // TODO add game state and state for each player
-// interface GameState<E, S: GameState<E,S>> {
-//
-//    fun with(event: E): S
-//
-// }

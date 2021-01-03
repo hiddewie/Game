@@ -78,8 +78,6 @@ class GameInstanceProvider(
 
         // We need a reference to the players for exposing the channels
         val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, S>() as P })
-        // We need a reference to the game to expose the latest game state
-//        val game = gameDetails.gameFactory(parameters)
 
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
@@ -90,10 +88,10 @@ class GameInstanceProvider(
             logger.info("Launching game ${gameDetails.slug} instance $instanceId and parameters $parameters")
 
             val gameJob = gameManager.play(
-//                { game },
                 gameDetails.gameFactory,
                 { playerConfiguration },
                 parameters,
+                { it }, // TODO make projection
             )
             stateSupplier = gameJob.stateSupplier
 

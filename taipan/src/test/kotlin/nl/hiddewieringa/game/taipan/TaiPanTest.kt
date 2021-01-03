@@ -6,9 +6,13 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.core.TwoTeamPlayerId.*
 import nl.hiddewieringa.game.taipan.card.*
+import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.ACE
+import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.JACK
+import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.KING
+import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.QUEEN
+import nl.hiddewieringa.game.taipan.card.Suit.*
 import nl.hiddewieringa.game.taipan.player.SimpleTaiPanPlayer
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 import kotlin.reflect.KClass
@@ -26,381 +30,324 @@ class TaiPanTest {
                 TwoPlayers(SimpleTaiPanPlayer(), SimpleTaiPanPlayer()),
             )
 
-            val allPlayers = Channel<Pair<TaiPanEvent, TaiPanState>>(capacity = Channel.UNLIMITED)
             val gamePlayerChannel = Channel<kotlin.Triple<TwoTeamPlayerId, TaiPanEvent, TaiPanState>>(capacity = Channel.UNLIMITED)
             val playerGameChannel = Channel<Pair<TwoTeamPlayerId, TaiPanPlayerActions>>(capacity = Channel.UNLIMITED)
 
-            val gameAsserts = channelAssert(allPlayers) {
-                assertNext(RoundBegan(1))
-
-                assertNext(TrickBegan(PLAYER2))
-                assertNext(
-                    PlayerPlayedCards(
-                        PLAYER2,
-                        MahjongStraight(
-                            setOf(
-                                2 of Suit.HEARTS,
-                                3 of Suit.HEARTS,
-                                4 of Suit.CLUBS,
-                                5 of Suit.HEARTS,
-                                6 of Suit.HEARTS,
-                                7 of Suit.SPADES
-                            ),
-                            Mahjong
-                        )
-                    )
-                )
-                assertNext(MahjongWishRequested(8))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(PlayerFolds(PLAYER4))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2, PLAYER2))
-
-                assertNext(TrickBegan(PLAYER2))
-                assertNext(PlayerPlayedCards(PLAYER2, PhoenixTriple(NumberedCard.QUEEN of Suit.HEARTS, NumberedCard.QUEEN of Suit.SPADES, Phoenix)))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(PlayerFolds(PLAYER4))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2, PLAYER2))
-
-                assertNext(TrickBegan(PLAYER2))
-                assertNext(PlayerPlayedCards(PLAYER2, HighCard(2 of Suit.DIAMONDS)))
-                assertNext(PlayerPlayedCards(PLAYER3, HighCard(8 of Suit.CLUBS)))
-                assertNext(MahjongWishFulfilled)
-                assertNext(PlayerFolds(PLAYER4))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerPlayedCards(PLAYER2, HighCard(9 of Suit.CLUBS)))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(PlayerFolds(PLAYER4))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2, PLAYER2))
-
-                assertNext(TrickBegan(PLAYER2))
-                assertNext(PlayerPlayedCards(PLAYER2, HighCard(3 of Suit.DIAMONDS)))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(PlayerFolds(PLAYER4))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2, PLAYER2))
-
-                assertNext(TrickBegan(PLAYER2))
-                assertNext(PlayerPlayedCards(PLAYER2, HighCard(10 of Suit.CLUBS)))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(PlayerFolds(PLAYER4))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(TrickWon(PLAYER2, PLAYER2))
-
-                assertNext(TrickBegan(PLAYER3))
-                assertNext(
-                    PlayerPlayedCards(
-                        PLAYER3,
-                        FullHouse(NumberedTuple(7 of Suit.HEARTS, 7 of Suit.DIAMONDS), NumberedTriple(5 of Suit.DIAMONDS, 5 of Suit.SPADES, 5 of Suit.CLUBS))
-                    )
-                )
-                assertNext(
-                    PlayerPlayedCards(
-                        PLAYER4,
-                        FullHouse(NumberedTuple(8 of Suit.HEARTS, 8 of Suit.SPADES), NumberedTriple(6 of Suit.DIAMONDS, 6 of Suit.SPADES, 6 of Suit.CLUBS))
-                    )
-                )
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, HighCard(2 of Suit.SPADES)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, HighCard(3 of Suit.SPADES)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, HighCard(4 of Suit.DIAMONDS)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, HighCard(9 of Suit.SPADES)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, HighCard(10 of Suit.SPADES)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, HighCard(NumberedCard.JACK of Suit.DIAMONDS)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(TrickBegan(PLAYER4))
-                assertNext(PlayerPlayedCards(PLAYER4, NumberedTriple(NumberedCard.KING of Suit.HEARTS, NumberedCard.KING of Suit.DIAMONDS, NumberedCard.KING of Suit.CLUBS)))
-                assertNext(PlayerFolds(PLAYER1))
-                assertNext(PlayerFolds(PLAYER2))
-                assertNext(PlayerFolds(PLAYER3))
-                assertNext(TrickWon(PLAYER4, PLAYER4))
-
-                assertNext(RoundEnded(1, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)))
-                assertNext(ScoreUpdated(mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)))
-            }
-
             val playerAsserts = channelAssert(gamePlayerChannel) {
-                assertNext(PLAYER1, CardsHaveBeenDealt::class)
-                assertNext(PLAYER2, CardsHaveBeenDealt::class)
-                assertNext(PLAYER3, CardsHaveBeenDealt::class)
-                assertNext(PLAYER4, CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
 
                 playerGameChannel.send(PLAYER1 to RequestNextCards)
                 playerGameChannel.send(PLAYER2 to RequestNextCards)
                 playerGameChannel.send(PLAYER3 to RequestNextCards)
                 playerGameChannel.send(PLAYER4 to RequestNextCards)
 
-                assertNext(PLAYER1, CardsHaveBeenDealt::class)
-                assertNext(PLAYER2, CardsHaveBeenDealt::class)
-                assertNext(PLAYER3, CardsHaveBeenDealt::class)
-                assertNext(PLAYER4, CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
+                assertAllPlayersNext(CardsHaveBeenDealt::class)
 
-                assertNext(PLAYER1, RequestPassCards::class)
-                assertNext(PLAYER2, RequestPassCards::class)
-                assertNext(PLAYER3, RequestPassCards::class)
-                assertNext(PLAYER4, RequestPassCards::class)
+                assertAllPlayersNext(AllPlayersHaveReceivedCards::class)
 
-                playerGameChannel.send(PLAYER4 to CardPass(ThreeWayPass(Dog, NumberedCard.QUEEN of Suit.HEARTS, Dragon)))
-                playerGameChannel.send(PLAYER2 to CardPass(ThreeWayPass(7 of Suit.HEARTS, NumberedCard.KING of Suit.CLUBS, 9 of Suit.HEARTS)))
-                playerGameChannel.send(PLAYER1 to CardPass(ThreeWayPass(2 of Suit.HEARTS, NumberedCard.KING of Suit.SPADES, 3 of Suit.SPADES)))
-                playerGameChannel.send(PLAYER3 to CardPass(ThreeWayPass(2 of Suit.SPADES, NumberedCard.QUEEN of Suit.CLUBS, 3 of Suit.HEARTS)))
+                playerGameChannel.send(PLAYER1 to CardPass(ThreeWayPass(Dog, ACE of HEARTS, 3 of DIAMONDS)))
+                playerGameChannel.send(PLAYER2 to CardPass(ThreeWayPass(3 of SPADES, ACE of SPADES, 9 of HEARTS)))
+                playerGameChannel.send(PLAYER4 to CardPass(ThreeWayPass(3 of HEARTS, QUEEN of CLUBS, 6 of HEARTS)))
+                playerGameChannel.send(PLAYER3 to CardPass(ThreeWayPass(2 of HEARTS, JACK of DIAMONDS, 6 of SPADES)))
 
-                assertNext(PLAYER1, CardsHaveBeenPassed::class)
-                assertNext(PLAYER2, CardsHaveBeenPassed::class)
-                assertNext(PLAYER3, CardsHaveBeenPassed::class)
-                assertNext(PLAYER4, CardsHaveBeenPassed::class)
+                assertAllPlayersNext(CardsHaveBeenPassed::class)
+                assertAllPlayersNext(CardsHaveBeenPassed::class)
+                assertAllPlayersNext(CardsHaveBeenPassed::class)
+                assertAllPlayersNext(CardsHaveBeenPassed::class)
 
-                assertNext(PLAYER2, RequestPlayCards::class)
+                assertAllPlayersNext(AllPlayersHavePassedCards::class)
+
+                playerGameChannel.send(
+                    PLAYER4 to PlayCards(
+                        setOf(Mahjong),
+                        setOf(MahjongRequest(8)),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                assertAllPlayersNext(MahjongWishRequested::class)
+
+                playerGameChannel.send(
+                    PLAYER1 to PlayCards(
+                        setOf(8 of DIAMONDS)
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                assertAllPlayersNext(MahjongWishFulfilled::class)
                 playerGameChannel.send(
                     PLAYER2 to PlayCards(
-                        setOf(
-                            Mahjong,
-                            2 of Suit.HEARTS,
-                            3 of Suit.HEARTS,
-                            4 of Suit.CLUBS,
-                            5 of Suit.HEARTS,
-                            6 of Suit.HEARTS,
-                            7 of Suit.SPADES
-                        ),
-                        setOf(MahjongRequest(8))
+                        setOf(Dragon)
                     )
                 )
-
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER4 to Fold)
-
-                assertNext(PLAYER1, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER2, RequestPlayCards::class)
+                assertAllPlayersNext(DragonTrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PassDragonTrick(DragonPass.LEFT)
+                )
+                assertAllPlayersNext(PlayerPassedDragon::class)
+
                 playerGameChannel.send(
                     PLAYER2 to PlayCards(
-                        setOf(
-                            NumberedCard.QUEEN of Suit.SPADES,
-                            NumberedCard.QUEEN of Suit.HEARTS,
-                            Phoenix,
-                        )
+                        setOf(Dog),
                     )
                 )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                assertAllPlayersNext(TrickWon::class)
 
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Fold)
-
-                assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER2, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER2 to PlayCards(setOf(2 of Suit.DIAMONDS)))
-
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to PlayCards(setOf(8 of Suit.CLUBS)))
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Fold)
-
-                assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER2, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER2 to PlayCards(setOf(9 of Suit.CLUBS)))
-
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Fold)
-
-                assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER2, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER2 to PlayCards(setOf(3 of Suit.DIAMONDS)))
-
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Fold)
-
-                assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER2, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER2 to PlayCards(setOf(10 of Suit.CLUBS)))
-
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to Fold)
-
-                assertNext(PLAYER1, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(
-                    PLAYER3 to PlayCards(
-                        setOf(
-                            7 of Suit.HEARTS,
-                            7 of Suit.DIAMONDS,
-                            5 of Suit.DIAMONDS,
-                            5 of Suit.CLUBS,
-                            5 of Suit.SPADES
-                        )
-                    )
-                )
-
-                assertNext(PLAYER4, RequestPlayCards::class)
                 playerGameChannel.send(
                     PLAYER4 to PlayCards(
                         setOf(
-                            8 of Suit.HEARTS,
-                            8 of Suit.SPADES,
-                            6 of Suit.DIAMONDS,
-                            6 of Suit.CLUBS,
-                            6 of Suit.SPADES
-                        )
+                            3 of DIAMONDS
+                        ),
                     )
                 )
-
-                assertNext(PLAYER1, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER2 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(2 of Suit.SPADES)))
+                assertAllPlayersNext(TrickWon::class)
 
-                assertNext(PLAYER1, RequestPlayCards::class)
+                playerGameChannel.send(
+                    PLAYER4 to PlayCards(
+                        setOf(
+                            5 of HEARTS,
+                            5 of DIAMONDS,
+                            10 of DIAMONDS,
+                            10 of SPADES,
+                            10 of CLUBS,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER2 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(3 of Suit.SPADES)))
+                assertAllPlayersNext(TrickWon::class)
 
-                assertNext(PLAYER1, RequestPlayCards::class)
+                playerGameChannel.send(
+                    PLAYER4 to PlayCards(
+                        setOf(
+                            JACK of SPADES,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER2 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(4 of Suit.DIAMONDS)))
+                assertAllPlayersNext(TrickWon::class)
 
-                assertNext(PLAYER1, RequestPlayCards::class)
+                playerGameChannel.send(
+                    PLAYER4 to PlayCards(
+                        setOf(
+                            9 of DIAMONDS,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER2 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(9 of Suit.SPADES)))
+                assertAllPlayersNext(TrickWon::class)
 
-                assertNext(PLAYER1, RequestPlayCards::class)
+                playerGameChannel.send(
+                    PLAYER4 to PlayCards(
+                        setOf(
+                            ACE of SPADES
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(10 of Suit.SPADES)))
-
-                assertNext(PLAYER1, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER2 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(
+                    PLAYER4 to PlayCards(
+                        setOf(
+                            2 of HEARTS,
+                            2 of DIAMONDS,
+                            2 of SPADES,
+                            2 of CLUBS,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                assertAllPlayersNext(PlayerIsOutOfCards::class)
                 playerGameChannel.send(PLAYER1 to Fold)
-
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER2 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(NumberedCard.JACK of Suit.DIAMONDS)))
+                // Player 4 folds again because no more cards.
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER1, RequestPlayCards::class)
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER1 to PlayCards(
+                        setOf(
+                            3 of HEARTS,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            Phoenix,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            3 of CLUBS,
+                            4 of CLUBS,
+                            5 of SPADES,
+                            6 of SPADES,
+                            7 of DIAMONDS,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER3 to Fold)
-
-                assertNext(PLAYER4, RequestPlayCards::class)
-                playerGameChannel.send(PLAYER4 to PlayCards(setOf(NumberedCard.KING of Suit.HEARTS, NumberedCard.KING of Suit.DIAMONDS, NumberedCard.KING of Suit.CLUBS)))
-
-                assertNext(PLAYER1, RequestPlayCards::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                assertAllPlayersNext(PlayerFolds::class)
                 playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
 
-                assertNext(PLAYER3, RequestPlayCards::class)
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            6 of DIAMONDS
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
                 playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            10 of HEARTS
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            JACK of HEARTS,
+                            JACK of CLUBS,
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            QUEEN of CLUBS
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+                assertAllPlayersNext(PlayerFolds::class)
+                playerGameChannel.send(PLAYER1 to Fold)
+                assertAllPlayersNext(PlayerFolds::class)
+
+                assertAllPlayersNext(TrickWon::class)
+
+                playerGameChannel.send(
+                    PLAYER2 to PlayCards(
+                        setOf(
+                            KING of CLUBS
+                        ),
+                    )
+                )
+                assertAllPlayersNext(PlayerPlayedCards::class)
+                playerGameChannel.send(PLAYER3 to Fold)
+                assertAllPlayersNext(PlayerIsOutOfCards::class)
+
+                assertAllPlayersNext(RoundEnded::class)
+                assertAllPlayersNext(GameEnded(TwoTeamTeamId.TEAM2))
             }
 
             launch {
                 withTimeout(2.seconds) {
-                    val gameResult = GameContext(players, game, allPlayers, gamePlayerChannel, playerGameChannel).playGame()
-                    assertEquals(TaiPanFinalScore(TwoTeamTeamId.TEAM2, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 0)), gameResult)
+                    val gameResult = GameContext(players, game, gamePlayerChannel, playerGameChannel, { it }).playGame()
+                    assertEquals(TaiPanFinalScore(TwoTeamTeamId.TEAM2, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)), gameResult)
                 }
             }
 
             withTimeout(1.seconds) {
-                gameAsserts.await()
                 playerAsserts.await()
-            }
-
-            if (!allPlayers.isEmpty) {
-                val messages = buildList {
-                    while (!allPlayers.isEmpty) {
-                        add(allPlayers.poll())
-                    }
-                }
-
-                allPlayers.close()
-                fail { "Leftover messages for all players: $messages" }
             }
             if (!gamePlayerChannel.isEmpty) {
                 val messages = buildList {
@@ -416,10 +363,7 @@ class TaiPanTest {
 
     class ChannelAsserter<E : Any>(
         internal val channel: ReceiveChannel<E>
-    ) {
-        suspend fun <T : E> assertNext(value: T) =
-            assertEquals(value, channel.receive())
-    }
+    )
 
     private fun <E : Any> CoroutineScope.channelAssert(channel: ReceiveChannel<E>, asserter: suspend ChannelAsserter<E>.() -> Unit) =
         async {
@@ -434,5 +378,23 @@ class TaiPanTest {
     private suspend fun <A : Any, B : Any, T : B, C : Any> ChannelAsserter<kotlin.Triple<A, B, C>>.assertNext(first: A, second: KClass<T>) {
         val (a, b, c) = channel.receive()
         assertTrue(a == first && second.isInstance(b)) { "Got ($a, $b, $c), expected ($first, instance of $second)" }
+    }
+
+    private suspend fun <B : Any, T : B, C : Any> ChannelAsserter<kotlin.Triple<TwoTeamPlayerId, B, C>>.assertAllPlayersNext(second: KClass<T>) {
+        val toFind = TwoTeamPlayerId.values().toMutableSet()
+        while (toFind.isNotEmpty()) {
+            val (a, b, c) = channel.receive()
+            assertTrue(toFind.contains(a) && second.isInstance(b)) { "Got ($a, $b, $c), expected (element of $toFind, instance of $second)" }
+            toFind.remove(a)
+        }
+    }
+
+    private suspend fun <B : Any, C : Any> ChannelAsserter<kotlin.Triple<TwoTeamPlayerId, B, C>>.assertAllPlayersNext(second: B) {
+        val toFind = TwoTeamPlayerId.values().toMutableSet()
+        while (toFind.isNotEmpty()) {
+            val (a, b, c) = channel.receive()
+            assertTrue(toFind.contains(a) && second == b) { "Got ($a, $b, $c), expected (element of $toFind, $second)" }
+            toFind.remove(a)
+        }
     }
 }

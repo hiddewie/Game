@@ -275,6 +275,14 @@ data class TaiPan(
 
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
         listOf(
+            GameDecision(points.any { (_, p) -> p >= parameters.points } && points.getValue(TwoTeamTeamId.TEAM1) != points.getValue(TwoTeamTeamId.TEAM2)) {
+                val winningTeam = if (points.getValue(TwoTeamTeamId.TEAM1) > points.getValue(TwoTeamTeamId.TEAM2)) {
+                    TwoTeamTeamId.TEAM1
+                } else {
+                    TwoTeamTeamId.TEAM2
+                }
+                GameEnded(winningTeam)
+            },
             playerCards.keys
                 .filter { player -> playerCards.getValue(player).isEmpty() }
                 .let { playersWithNoCards ->
@@ -285,14 +293,6 @@ data class TaiPan(
                 },
             GameDecision(playerCards.all { (_, cards) -> cards.size == 14 }) {
                 AllPlayersHaveReceivedCards
-            },
-            GameDecision(points.any { (_, p) -> p >= parameters.points } && points.getValue(TwoTeamTeamId.TEAM1) != points.getValue(TwoTeamTeamId.TEAM2)) {
-                val winningTeam = if (points.getValue(TwoTeamTeamId.TEAM1) > points.getValue(TwoTeamTeamId.TEAM2)) {
-                    TwoTeamTeamId.TEAM1
-                } else {
-                    TwoTeamTeamId.TEAM2
-                }
-                GameEnded(winningTeam)
             },
         )
 }
@@ -401,6 +401,7 @@ data class TaiPanPlayTrick(
     val roundCards: Map<TwoTeamPlayerId, CardSet>,
     val trickCards: CardSet,
     val lastPlayedCards: kotlin.Triple<TwoTeamPlayerId, CardCombination, MahjongRequest?>?,
+    val folds: Int,
     val outOfCardOrder: List<TwoTeamPlayerId>,
     val mahjongWish: MahjongWish,
 ) : TaiPanState(), IntermediateGameState<TwoTeamPlayerId, TaiPanPlayerActions, TaiPanEvent, TaiPanState> {
@@ -426,6 +427,7 @@ data class TaiPanPlayTrick(
             .toMap(),
         emptySet(),
         null,
+        0,
         emptyList(),
         MahjongWish(),
     )
@@ -436,13 +438,15 @@ data class TaiPanPlayTrick(
             is PlayerPlayedCards ->
                 copy(
                     playerCards = playerCards + mapOf(event.player to playerCards.getValue(event.player) - event.cards.cards),
-                    lastPlayedCards = Triple(currentPlayer, event.cards, event.mahjongRequest),
-                    currentPlayer = nextPlayer(currentPlayer),
+                    lastPlayedCards = Triple(event.player, event.cards, event.mahjongRequest),
+                    folds = 0,
+                    currentPlayer = nextPlayer(event.player),
                 )
 
             is PlayerFolds ->
                 copy(
-                    currentPlayer = nextPlayer(currentPlayer)
+                    currentPlayer = nextPlayer(currentPlayer),
+                    folds = folds + 1,
                 )
 
             is PlayerTaiPanned ->
@@ -467,6 +471,7 @@ data class TaiPanPlayTrick(
                     trickIndex = trickIndex + 1,
                     currentPlayer = event.nextPlayer,
                     lastPlayedCards = null,
+                    folds = 0,
                 )
 
             is RoundEnded ->
@@ -487,7 +492,8 @@ data class TaiPanPlayTrick(
         when {
 
             playerId == currentPlayer && action is PlayCards -> {
-                val playedCards = findCardCombination(null, action.cards, action.addons)
+                val playedCards = findCardCombination(lastPlayedCards?.second, action.cards, action.addons)
+                println("Played combination $playedCards")
 
                 when {
                     !playerCards.getValue(playerId).containsAll(action.cards) ->
@@ -505,7 +511,7 @@ data class TaiPanPlayTrick(
                         IllegalAction("Must play the Mahjong wish", action)
 
                     else ->
-                        PlayerPlayedCards(currentPlayer, playedCards)
+                        PlayerPlayedCards(currentPlayer, playedCards, action.addons.filterIsInstance<MahjongRequest>().firstOrNull())
                 }
             }
 
@@ -570,22 +576,23 @@ data class TaiPanPlayTrick(
                 MahjongWishFulfilled
             },
             GameDecision(lastPlayedCards != null && !mahjongWish.present && lastPlayedCards.second.cards.any { it is Mahjong } && lastPlayedCards.third != null) {
-                MahjongWishRequested(mahjongWish.value)
+                MahjongWishRequested(lastPlayedCards!!.third!!.value)
             },
             GameDecision(lastPlayedCards != null && lastPlayedCards.second is HighCard && (lastPlayedCards.second as HighCard).card == Dog) {
-                TrickWon(currentPlayer, nextPlayer(nextPlayer(currentPlayer)))
+                TrickWon(lastPlayedCards!!.first, nextPlayer(nextPlayer(lastPlayedCards.first)))
             },
             GameDecision(playerCards.getValue(currentPlayer).isEmpty()) {
+                // TODO build into 'next player' after cards played
                 println("Player $currentPlayer has no cards and folds")
                 PlayerFolds(currentPlayer)
             },
-            GameDecision(lastPlayedCards != null && lastPlayedCards.first == currentPlayer) {
-                if (lastPlayedCards != null && lastPlayedCards.second is HighCard && (lastPlayedCards.second as HighCard).card == Dragon) {
-                    DragonTrickWon(currentPlayer)
+            GameDecision(lastPlayedCards != null && folds >= 3) {
+                if (lastPlayedCards!!.second is HighCard && (lastPlayedCards.second as HighCard).card == Dragon) {
+                    DragonTrickWon(lastPlayedCards.first)
                 } else {
-                    println("Player $currentPlayer won the trick and received trick cards $trickCards")
+                    println("Player ${lastPlayedCards.first} won the trick and received trick cards $trickCards")
 
-                    var nextPlayerToPlay = currentPlayer
+                    var nextPlayerToPlay = lastPlayedCards.first
                     while (playerCards.getValue(nextPlayerToPlay).isEmpty()) {
                         println("Player $nextPlayerToPlay is out of cards. Next player: ${nextPlayer(nextPlayerToPlay)}")
                         nextPlayerToPlay = nextPlayer(nextPlayerToPlay)
@@ -640,6 +647,8 @@ data class TaiPanDragonPass(val trick: TaiPanPlayTrick) : TaiPanState(), Interme
                     trickCards = emptySet(),
                     currentPlayer = event.playerId,
                     trickIndex = trick.trickIndex + 1,
+                    lastPlayedCards = null,
+                    folds = 0,
                 )
 
             else ->

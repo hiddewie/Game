@@ -6,43 +6,38 @@ import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.channels.produce
 
-// interface SS <PID : PlayerId, A : PlayerActions, E : Event> :  State, GameState<PID, A, E>
-
+/**
+ * A job that maintains an observable state while it is running
+ */
 class StatefulJob<S : State<S>>(
     private val job: Deferred<S>,
     val stateSupplier: () -> S
 ) : Deferred<S> by job
 
+/**
+ * Executor for a game with a set of players.
+ * Creates a game context that holds state.
+ * Returns the (stateful) running game job that can be cancelled.
+ */
 class GameManager {
 
-    // TODO maybe refactor factories to simple parameter passing?
-    suspend fun <M : GameParameters, P : Player<M, E, A, PID, S>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : State<S>>
+    suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : State<S>, PS>
     play(
-//        gameFactory: (M) -> Game<M, P, A, E, R, PID, PC, S>,
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
-        parameters: M
+        parameters: M,
+        playerState: (S) -> PS,
     ): StatefulJob<S> {
         val players = playerFactory()
-//        val game = gameFactory(parameters)
 
         return coroutineScope {
             // TODO why unlimited capacity? Would be better to meet-and-greet for delivering events and actions (?)
             val gameReceiveChannel = Channel<Pair<PID, A>>(capacity = UNLIMITED)
-            val gameSendChannel = Channel<Triple<PID, E, S>>(capacity = UNLIMITED)
-            val gameSendAllChannel = Channel<Pair<E, S>>(capacity = UNLIMITED)
+            val gameSendChannel = Channel<Triple<PID, E, PS>>(capacity = UNLIMITED)
 
             val playerChannels = players.allPlayers
-                .map { playerId -> playerId to Channel<Pair<E, S>>(capacity = UNLIMITED) }
+                .map { playerId -> playerId to Channel<Pair<E, PS>>(capacity = UNLIMITED) }
                 .toMap()
-
-            launch {
-                gameSendAllChannel.consumeEach { event ->
-                    players.forEach { playerId ->
-                        playerChannels.getValue(playerId).send(event)
-                    }
-                }
-            }
 
             launch {
                 gameSendChannel.consumeEach {
@@ -51,10 +46,10 @@ class GameManager {
             }
 
             // Create the game context, the stateful wrapper that encapsulates all game interaction and state
-            val context = GameContext(players, gameStateFactory(parameters), gameSendAllChannel, gameSendChannel, gameReceiveChannel)
+            val context = GameContext(players, gameStateFactory(parameters), gameSendChannel, gameReceiveChannel, playerState)
 
             players.forEach { playerId ->
-                val playerProducer = players.player(playerId).initialize(parameters, playerId, context.state, playerChannels.getValue(playerId))
+                val playerProducer = players.player(playerId).initialize(parameters, playerId, playerState(context.state), playerChannels.getValue(playerId))
                 val playerSendChannel = produce(coroutineContext, UNLIMITED, playerProducer)
                 launch {
                     playerSendChannel.consumeEach { gameReceiveChannel.send(playerId to it) }
@@ -64,9 +59,12 @@ class GameManager {
             // Play the game, wait for the result
             val job = async {
                 val result = context.playGame()
-                coroutineContext.cancelChildren()
+                println("Game has result $result")
+//                coroutineContext.cancelChildren()
+                println("Canceled children")
                 result
             }
+            job.invokeOnCompletion { coroutineContext.cancelChildren() }
 
             StatefulJob(job, context::state)
         }

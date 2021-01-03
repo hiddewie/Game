@@ -27,10 +27,11 @@ class TicTacToeTest {
                         StubbedPlayer(listOf(Location(0, 2), Location(0, 1), Location(2, 2), Location(1, 0))),
                     )
                 },
-                TicTacToeGameParameters
+                TicTacToeGameParameters,
+                { it },
             )
 
-            assertEquals(NoPlayerWon, gameResult)
+            assertEquals(NoPlayerWon, gameResult.await())
         }
     }
 
@@ -47,10 +48,11 @@ class TicTacToeTest {
                         FreeSpaceTicTacToePlayer(),
                     )
                 },
-                TicTacToeGameParameters
+                TicTacToeGameParameters,
+                { it },
             )
 
-            assertEquals(PlayerWon(TwoPlayerId.PLAYER2), gameResult)
+            assertEquals(PlayerWon(TwoPlayerId.PLAYER2), gameResult.await())
         }
     }
 
@@ -67,10 +69,11 @@ class TicTacToeTest {
                         StubbedPlayer(listOf(Location(1, 0), Location(1, 1), Location(1, 2))),
                     )
                 },
-                TicTacToeGameParameters
+                TicTacToeGameParameters,
+                { it },
             )
 
-            assertEquals(PlayerWon(TwoPlayerId.PLAYER1), gameResult)
+            assertEquals(PlayerWon(TwoPlayerId.PLAYER1), gameResult.await())
         }
     }
 

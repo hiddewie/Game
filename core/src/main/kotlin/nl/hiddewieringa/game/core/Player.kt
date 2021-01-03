@@ -8,7 +8,7 @@ interface Player<
     E : Event,
     A : PlayerActions,
     PID : PlayerId,
-    S : State<S>
+    S
     > {
 
     /**
