@@ -2,6 +2,8 @@ package nl.hiddewieringa.game.taipan
 
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.taipan.card.*
+import java.util.*
+import kotlin.Comparator
 import kotlin.random.Random
 
 sealed class TaiPanState : State<TaiPanState>
@@ -179,8 +181,7 @@ data class TaiPan(
     private val parameters: TaiPanGameParameters,
     val points: Map<TeamId, Int>,
     val playerCardsToGive: Map<TwoTeamPlayerId, List<Card>>,
-    // TODO make sorted set
-    val playerCards: Map<TwoTeamPlayerId, List<Card>>,
+    val playerCards: Map<TwoTeamPlayerId, SortedSet<Card>>,
     val taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
     val roundIndex: Int,
 ) : TaiPanState(), IntermediateGameState<TwoTeamPlayerId, TaiPanPlayerActions, TaiPanEvent, TaiPanState> {
@@ -203,7 +204,7 @@ data class TaiPan(
                     .onEach { it.value.sortWith(Comparator.naturalOrder()) }
             },
         TwoTeamPlayerId.values()
-            .map { it to emptyList<Card>() }
+            .map { it to sortedSetOf<Card>() }
             .toMap(),
         mapOf<TwoTeamPlayerId, TaiPanStatus>(),
         roundIndex
@@ -222,7 +223,7 @@ data class TaiPan(
         when (event) {
             is CardsHaveBeenDealt ->
                 copy(
-                    playerCards = playerCards + mapOf(event.player to (playerCards.getValue(event.player) + event.cards).sortedWith(Comparator.naturalOrder())),
+                    playerCards = playerCards + mapOf(event.player to ((playerCards.getValue(event.player) + event.cards).toSortedSet())),
                 )
 
             is PlayerTaiPanned ->
@@ -300,7 +301,7 @@ data class TaiPan(
 data class TaiPanPassCards(
     private val parameters: TaiPanGameParameters,
     val points: Map<TeamId, Int>,
-    val playerCards: Map<TwoTeamPlayerId, List<Card>>,
+    val playerCards: Map<TwoTeamPlayerId, SortedSet<Card>>,
     val taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
     val passedCards: Map<TwoTeamPlayerId, ThreeWayPass>,
     val roundIndex: Int,
@@ -309,7 +310,7 @@ data class TaiPanPassCards(
     constructor(
         parameters: TaiPanGameParameters,
         points: Map<TeamId, Int>,
-        playerCards: Map<TwoTeamPlayerId, List<Card>>,
+        playerCards: Map<TwoTeamPlayerId, SortedSet<Card>>,
         taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
         roundIndex: Int,
     ) : this(
@@ -376,24 +377,24 @@ data class TaiPanPassCards(
             }
         )
 
-    private fun Map<TwoTeamPlayerId, List<Card>>.distributePassedCards(passedCards: Map<TwoTeamPlayerId, ThreeWayPass>): Map<TwoTeamPlayerId, List<Card>> {
-        val newPlayerCards: MutableMap<TwoTeamPlayerId, List<Card>> = this.toMutableMap()
+    private fun Map<TwoTeamPlayerId, SortedSet<Card>>.distributePassedCards(passedCards: Map<TwoTeamPlayerId, ThreeWayPass>): Map<TwoTeamPlayerId, SortedSet<Card>> {
+        val newPlayerCards: MutableMap<TwoTeamPlayerId, SortedSet<Card>> = this.toMutableMap()
 
         passedCards.forEach { (playerId, cards) ->
-            newPlayerCards.computeIfPresent(playerId) { _, value -> value - setOf(cards.left, cards.forward, cards.right) }
-            newPlayerCards.computeIfPresent(nextPlayer(playerId)) { _, value -> value + setOf(cards.left) }
-            newPlayerCards.computeIfPresent(nextPlayer(nextPlayer(playerId))) { _, value -> value + setOf(cards.forward) }
-            newPlayerCards.computeIfPresent(nextPlayer(nextPlayer(nextPlayer(playerId)))) { _, value -> value + setOf(cards.right) }
+            newPlayerCards.computeIfPresent(playerId) { _, value -> (value - setOf(cards.left, cards.forward, cards.right)).toSortedSet() }
+            newPlayerCards.computeIfPresent(nextPlayer(playerId)) { _, value -> (value + setOf(cards.left)).toSortedSet() }
+            newPlayerCards.computeIfPresent(nextPlayer(nextPlayer(playerId))) { _, value -> (value + setOf(cards.forward)).toSortedSet() }
+            newPlayerCards.computeIfPresent(nextPlayer(nextPlayer(nextPlayer(playerId)))) { _, value -> (value + setOf(cards.right)).toSortedSet() }
         }
 
-        return newPlayerCards.mapValues { (_, value) -> value.sortedWith(Comparator.naturalOrder()) }
+        return newPlayerCards
     }
 }
 
 data class TaiPanPlayTrick(
     private val parameters: TaiPanGameParameters,
     val points: Map<TeamId, Int>,
-    val playerCards: Map<TwoTeamPlayerId, List<Card>>,
+    val playerCards: Map<TwoTeamPlayerId, SortedSet<Card>>,
     val taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
     val roundIndex: Int,
     val trickIndex: Int,
@@ -409,7 +410,7 @@ data class TaiPanPlayTrick(
     constructor(
         parameters: TaiPanGameParameters,
         points: Map<TeamId, Int>,
-        playerCards: Map<TwoTeamPlayerId, List<Card>>,
+        playerCards: Map<TwoTeamPlayerId, SortedSet<Card>>,
         taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
         roundIndex: Int,
     ) : this(
@@ -437,7 +438,7 @@ data class TaiPanPlayTrick(
 
             is PlayerPlayedCards ->
                 copy(
-                    playerCards = playerCards + mapOf(event.player to playerCards.getValue(event.player) - event.cards.cards),
+                    playerCards = playerCards + mapOf(event.player to (playerCards.getValue(event.player) - event.cards.cards).toSortedSet()),
                     lastPlayedCards = Triple(event.player, event.cards, event.mahjongRequest),
                     folds = 0,
                     currentPlayer = nextPlayer(event.player),
