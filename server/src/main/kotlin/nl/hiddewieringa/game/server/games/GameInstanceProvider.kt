@@ -11,7 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
 
-class PlayerSlots<A : PlayerActions, E : Event, S>(
+class PlayerSlot<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
+    val playerId: PID,
     val sendChannel: SendChannel<A>,
     val receiveChannel: ReceiveChannel<Pair<E, S>>,
 ) {
@@ -29,11 +30,11 @@ class PlayerSlots<A : PlayerActions, E : Event, S>(
     }
 }
 
-class GameInstance<A : PlayerActions, E : Event, S : Any>(
+class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val id: UUID,
     val gameSlug: String,
-    val playerSlots: Map<UUID, PlayerSlots<A, E, S>>,
-    val stateProvider: () -> S,
+    val playerSlots: Map<UUID, PlayerSlot<A, E, S, PID>>,
+    val stateProvider: (PID) -> S,
 ) {
     val open: Boolean
         get() = playerSlots.values.any { it.referenceCount.get() == 0 }
@@ -64,7 +65,7 @@ class GameInstanceProvider(
     private val gameManager: GameManager,
 ) {
 
-    private val instances: MutableMap<UUID, GameInstance<*, *, *>> = mutableMapOf()
+    private val instances: MutableMap<UUID, GameInstance<*, *, *, *>> = mutableMapOf()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
     suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
@@ -97,9 +98,10 @@ class GameInstanceProvider(
         }
 
         val playerSlots = playerConfiguration
-            .map {
-                val player = playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>
-                UUID.randomUUID() to PlayerSlots(
+            .map { playerId ->
+                val player = playerConfiguration.player(playerId) as WebsocketPlayer<M, A, E, PS>
+                UUID.randomUUID() to PlayerSlot(
+                    playerId,
                     player.actionChannel,
                     player.eventChannel,
                 )
@@ -110,19 +112,19 @@ class GameInstanceProvider(
             instanceId,
             gameDetails.slug,
             playerSlots,
-            { gameDetails.playerState(startedJob.stateSupplier()) },
+            { playerId: PID -> gameDetails.playerState.invoke(startedJob.stateSupplier(), playerId) },
         )
         logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots")
 
         return instanceId
     }
 
-    fun gameInstance(instanceId: UUID): GameInstance<*, *, *>? =
+    fun gameInstance(instanceId: UUID): GameInstance<*, *, *, *>? =
         instances[instanceId]
 
-    fun openGames(gameSlug: String): List<GameInstance<*, *, *>> =
+    fun openGames(gameSlug: String): List<GameInstance<*, *, *, *>> =
         instances.values
             .filter { it.gameSlug == gameSlug }
-            .filter(GameInstance<*, *, *>::open)
+            .filter(GameInstance<*, *, *, *>::open)
             .toList()
 }

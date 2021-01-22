@@ -2,7 +2,6 @@ package nl.hiddewieringa.game.core
 
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
-import java.lang.IllegalStateException
 
 /**
  * A stateful wrapper around game state, combined with the player interaction.
@@ -14,7 +13,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
     initialState: S,
     private val playerChannel: SendChannel<Triple<PID, E, PS>>,
     private val playerActions: ReceiveChannel<Pair<PID, A>>,
-    private val playerState: (S) -> PS,
+    private val playerState: S.(PID) -> PS,
 ) {
 
     var state: S = initialState
@@ -37,7 +36,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
                         state = (currentState as IntermediateGameState<PID, A, E, S>).applyEvent(decisionEvent)
 
                         playerIds.forEach { playerId ->
-                            playerChannel.send(Triple(playerId, decisionEvent, playerState(state)))
+                            playerChannel.send(Triple(playerId, decisionEvent, state.playerState(playerId)))
                         }
 
                         println("Game loop: State update processed")
@@ -52,8 +51,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
                         state = (currentState as IntermediateGameState<PID, A, E, S>).applyEvent(event)
 
                         playerIds.forEach { playerId ->
-                            // TODO filter sensitive event contents
-                            playerChannel.send(Triple(playerId, event, playerState(state)))
+                            playerChannel.send(Triple(playerId, event, state.playerState(playerId)))
                         }
 
                         println("Game loop: State update processed")
@@ -65,7 +63,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
                     return currentState
                 }
             }
-            loop ++
+            loop++
         }
 
         throw IllegalStateException("The loop count exceeded the maximum value $loop")
@@ -79,7 +77,7 @@ interface GameStage<PID : PlayerId, A : PlayerActions, E : Event> {
 
 class GameDecision<E>(
     val condition: Boolean,
-    val event: () -> E
+    val event: () -> E,
 )
 
 interface IntermediateGameState<PID : PlayerId, A : PlayerActions, E : Event, S : GameState<S>> : GameStage<PID, A, E> {

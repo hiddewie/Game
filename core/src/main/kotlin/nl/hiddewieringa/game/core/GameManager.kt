@@ -27,7 +27,7 @@ class GameManager {
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
         parameters: M,
-        playerState: (S) -> PS,
+        playerState: S.(PID) -> PS,
     ): StatefulJob<S> {
         val players = playerFactory()
 
@@ -49,7 +49,7 @@ class GameManager {
         val context = GameContext(players, gameStateFactory(parameters), gameSendChannel, gameReceiveChannel, playerState)
 
         players.forEach { playerId ->
-            val playerProducer = players.player(playerId).play(parameters, playerId, playerState(context.state), playerChannels.getValue(playerId))
+            val playerProducer = players.player(playerId).play(parameters, playerId, context.state.playerState(playerId), playerChannels.getValue(playerId))
             val playerSendChannel = scope.produce(scope.coroutineContext, UNLIMITED, playerProducer)
             scope.launch {
                 playerSendChannel.consumeEach { gameReceiveChannel.send(playerId to it) }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.reactor.asFlux
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.core.PlayerActions
+import nl.hiddewieringa.game.core.PlayerId
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -55,17 +56,17 @@ class WebSocketController(
         val instanceId: UUID = UUID.fromString(template.match(path)["instanceId"])
         val playerSlotId: UUID = UUID.fromString(template.match(path)["playerSlotId"])
 
-        return handle(playerSlotId, instanceId, session)
+        return handle<Any, PlayerId>(playerSlotId, instanceId, session)
     }
 
-    private fun handle(playerSlotId: UUID, instanceId: UUID, session: WebSocketSession): Mono<Void> {
+    private fun <S : Any, PID : PlayerId> handle(playerSlotId: UUID, instanceId: UUID, session: WebSocketSession): Mono<Void> {
         val gameInstance = gameInstanceProvider.gameInstance(instanceId)
 
         // If the instance or player slot does not exist, close the connection
-        val playerSlots = gameInstance?.playerSlots?.get(playerSlotId)
+        val playerSlot = gameInstance?.playerSlots?.get(playerSlotId)
             ?: return Mono.empty()
 
-        playerSlots.increaseReference()
+        playerSlot.increaseReference()
 
         // TODO: other scope?
         GlobalScope.launch {
@@ -73,16 +74,18 @@ class WebSocketController(
                 // Messages must be retained to make Netty not lose it due to 0 message reference count
                 .map(WebSocketMessage::retain)
                 .asFlow()
-                .collect { (playerSlots.sendChannel as SendChannel<PlayerActions>).send(readAction(it)) }
+                .collect { (playerSlot.sendChannel as SendChannel<PlayerActions>).send(readAction(it)) }
         }
 
         // The initial state is published directly
-        val initialState = Flux.just(session.stateMessage(gameInstance.stateProvider()))
-        val events = playerSlots.receiveChannel.receiveAsFlow().asFlux()
+        val stateProvider: (PID) -> S = gameInstance.stateProvider as (PID) -> S
+        val initialState = stateProvider(playerSlot.playerId as PID)
+        val initialStateFlux = Flux.just(session.stateMessage(initialState))
+        val events = playerSlot.receiveChannel.receiveAsFlow().asFlux()
             .map { (event, state) -> session.eventMessage(event, state) }
 
-        return session.send(initialState.concatWith(events))
-            .doFinally { playerSlots.decreaseReference() }
+        return session.send(initialStateFlux.concatWith(events))
+            .doFinally { playerSlot.decreaseReference() }
     }
 
     private fun WebSocketSession.eventMessage(data: Any, state: Any) =

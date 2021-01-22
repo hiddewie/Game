@@ -21,7 +21,7 @@ val TicTacToeComponent = functionalComponent<TicTacToeProps> { props ->
     console.info(gameState)
 
     val play = { x: Int, y: Int ->
-        console.info("getPlay", x, y)
+        console.info("play", x, y)
         dispatchAction(json(
             "__type" to "nl.hiddewieringa.game.tictactoe.PlaceMarkLocation",
             "location" to json(

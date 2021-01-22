@@ -28,10 +28,6 @@ class HomeController(
         gameInstanceProvider.openGames(gameSlug)
             .map { OpenGame(it.id, it.playerSlots.keys) }
 
-//    @GetMapping("games/{gameSlug}/instance/{instanceId}")
-//    fun instanceDetails(@PathVariable gameId: UUID, @PathVariable instanceId: UUID): GameInstance<*, *, *>? =
-//        gameInstanceProvider.gameInstance(gameSlug, instanceId)
-
     @PostMapping("games/{gameSlug}/start")
     suspend fun startGame(@PathVariable gameSlug: String): UUID =
         gameInstanceProvider.start(gameProvider.bySlug(gameSlug))

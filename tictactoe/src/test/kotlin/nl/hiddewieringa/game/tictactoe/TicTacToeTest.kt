@@ -20,6 +20,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
+                this,
                 { TicTacToePlay() },
                 {
                     TwoPlayers(
@@ -28,7 +29,7 @@ class TicTacToeTest {
                     )
                 },
                 TicTacToeGameParameters,
-                { it },
+                { this },
             )
 
             assertEquals(NoPlayerWon, gameResult.await())
@@ -41,6 +42,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
+                this,
                 { TicTacToePlay() },
                 {
                     TwoPlayers(
@@ -49,7 +51,7 @@ class TicTacToeTest {
                     )
                 },
                 TicTacToeGameParameters,
-                { it },
+                { this },
             )
 
             assertEquals(PlayerWon(TwoPlayerId.PLAYER2), gameResult.await())
@@ -62,6 +64,7 @@ class TicTacToeTest {
             val gameManager = GameManager()
 
             val gameResult = gameManager.play(
+                this,
                 { TicTacToePlay() },
                 {
                     TwoPlayers(
@@ -70,7 +73,7 @@ class TicTacToeTest {
                     )
                 },
                 TicTacToeGameParameters,
-                { it },
+                { this },
             )
 
             assertEquals(PlayerWon(TwoPlayerId.PLAYER1), gameResult.await())

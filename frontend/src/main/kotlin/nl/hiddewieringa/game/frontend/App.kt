@@ -53,7 +53,7 @@ val GamesComponent = functionalComponent<RProps> {
             games.map { item ->
                 li {
                     key = item.slug
-                    routeLink("/getOpen/${item.slug}") {
+                    routeLink("/open/${item.slug}") {
                         +item.slug
                     }
                 }
@@ -79,7 +79,7 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
 
     val fetchData = useCallback({
         MainScope().launch {
-            val openGames = window.fetch("http://localhost:8081/games/${gameSlug}/getOpen")
+            val openGames = window.fetch("http://localhost:8081/games/${gameSlug}/open")
                 .await()
                 .json()
                 .await()
@@ -113,7 +113,7 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
                         item.playerSlotIds.map { playerSlotId ->
                             li {
                                 key = playerSlotId
-                                routeLink("/getPlay/${gameSlug}/${item.id}/${playerSlotId}") {
+                                routeLink("/play/${gameSlug}/${item.id}/${playerSlotId}") {
                                     +"${item.id} ${Typography.mdash} ${playerSlotId}"
                                 }
                             }
@@ -158,7 +158,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     useEffectWithCleanup(listOf(instanceId, playerSlotId)) {
         val socket = WebSocket("ws://localhost:8081/interaction/$instanceId/$playerSlotId")
         socket.onopen = {
-            console.info("getOpen", it)
+            console.info("open", it)
             setConnected(true)
         }
         socket.onclose = {
@@ -230,10 +230,10 @@ val AppComponent = functionalComponent<RProps> {
                 route("/", exact = true) {
                     child(GamesComponent)
                 }
-                route<GameSlug>("/getOpen/:gameSlug") { props ->
+                route<GameSlug>("/open/:gameSlug") { props ->
                     child(OpenGamesComponent, props.match.params)
                 }
-                route<GamePlay>("/getPlay/:gameSlug/:instanceId/:playerSlotId") { props ->
+                route<GamePlay>("/play/:gameSlug/:instanceId/:playerSlotId") { props ->
                     child(PlayComponent, props.match.params)
                 }
             }
