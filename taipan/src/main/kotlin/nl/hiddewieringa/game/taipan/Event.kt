@@ -7,6 +7,7 @@ import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 
 sealed class TaiPanEvent : Event
 data class CardsHaveBeenDealt(override val player: TwoTeamPlayerId, val cards: CardSet) : TaiPanEvent(), PlayerSpecific
+// TODO rename -> exchanged
 data class CardsHaveBeenPassed(override val player: TwoTeamPlayerId, val pass: ThreeWayPass) : TaiPanEvent(), PlayerSpecific
 object AllPlayersHaveReceivedCards : TaiPanEvent()
 object AllPlayersHavePassedCards : TaiPanEvent()
@@ -25,6 +26,7 @@ data class MahjongWishRequested(val value: Int) : TaiPanEvent()
 object MahjongWishFulfilled : TaiPanEvent()
 data class PlayerIsOutOfCards(val player: TwoTeamPlayerId) : TaiPanEvent()
 
+// TODO remove all request events
 object RequestPassCards : TaiPanEvent()
 object RequestPlayCards : TaiPanEvent()
 object RequestPassDragon : TaiPanEvent()

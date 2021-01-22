@@ -6,7 +6,7 @@ function TicTacToe(props) {
 
   const play = (x, y) => {
     console.info('play', x, y)
-    dispatchAction({'@type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x, y}})
+    dispatchAction({'__type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x, y}})
   }
 
   return (<div>
@@ -16,7 +16,7 @@ function TicTacToe(props) {
         [...Array(3)].map((_, y) => (
           <tr key={y}>{
             [...Array(3)].map((_, x) => (
-              <td key={x} onClick={() => play(x, y)}>{gameState[x][y] !== null ? (gameState[x][y]['@type'] === 'nl.hiddewieringa.game.tictactoe.Cross' ? 'X' : 'O') : '.'}</td>
+              <td key={x} onClick={() => play(x, y)}>{gameState[x][y] !== null ? (gameState[x][y]['__type'] === 'nl.hiddewieringa.game.tictactoe.Cross' ? 'X' : 'O') : '.'}</td>
             ))
           }</tr>
         ))

@@ -252,7 +252,7 @@ data class TaiPan(
     override fun processPlayerAction(playerId: TwoTeamPlayerId, action: TaiPanPlayerActions): TaiPanEvent =
         when (action) {
 
-            RequestNextCards ->
+            is RequestNextCards ->
                 when {
                     playerCards.getValue(playerId).size > 8 ->
                         IllegalAction("Already received next cards", action)
@@ -261,7 +261,7 @@ data class TaiPan(
                         CardsHaveBeenDealt(playerId, playerCardsToGive.getValue(playerId).subList(8, 14).toSet())
                 }
 
-            CallTaiPan ->
+            is CallTaiPan ->
                 when {
                     taiPannedPlayers.containsKey(playerId) ->
                         IllegalAction("Already tai panned", action)

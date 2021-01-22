@@ -1,9 +1,7 @@
 package nl.hiddewieringa.game.server.games
 
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
@@ -36,7 +34,6 @@ class GameInstance<A : PlayerActions, E : Event, S : Any>(
     val gameSlug: String,
     val playerSlots: Map<UUID, PlayerSlots<A, E, S>>,
     val stateProvider: () -> S,
-//    val actionClass: Class<A>,
 ) {
     val open: Boolean
         get() = playerSlots.values.any { it.referenceCount.get() == 0 }
@@ -70,8 +67,8 @@ class GameInstanceProvider(
     private val instances: MutableMap<UUID, GameInstance<*, *, *>> = mutableMapOf()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
-    fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
-    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
+    suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
+            start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
 
         val instanceId = UUID.randomUUID()
         val parameters = gameDetails.defaultParameters
@@ -79,23 +76,21 @@ class GameInstanceProvider(
         // We need a reference to the players for exposing the channels
         val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, PS>() as P })
 
+        val gameJob = gameManager.play(
+            GlobalScope, // TODO should this be a specific scope (?)
+            gameDetails.gameFactory,
+            { playerConfiguration },
+            parameters,
+            gameDetails.playerState,
+        )
+        val startedJob = gameJob
+
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
-        var stateSupplier: (() -> S)? = null
-        GlobalScope.launch(threadPoolDispatcher) {
 
-            logger.info("Launching game ${gameDetails.slug} instance $instanceId and parameters $parameters")
-
-            val gameJob = gameManager.play(
-                gameDetails.gameFactory,
-                { playerConfiguration },
-                parameters,
-                gameDetails.playerState,
-            )
-            stateSupplier = gameJob.stateSupplier
-
-            val gameResult = gameJob.await()
+        GlobalScope.async(threadPoolDispatcher) {
+            val gameResult = startedJob.await()
 
             // TODO store game result
             println("Game result of $instanceId: $gameResult")
@@ -115,9 +110,8 @@ class GameInstanceProvider(
             instanceId,
             gameDetails.slug,
             playerSlots,
-            { gameDetails.playerState(stateSupplier!!()) },
+            { gameDetails.playerState(startedJob.stateSupplier()) },
         )
-
         logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots")
 
         return instanceId

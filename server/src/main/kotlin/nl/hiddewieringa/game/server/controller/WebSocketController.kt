@@ -48,7 +48,7 @@ class WebSocketController(
         .build()
 
     private val objectMapper = jacksonObjectMapper()
-        .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "@type")
+        .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "__type")
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val path = session.handshakeInfo.uri.path
