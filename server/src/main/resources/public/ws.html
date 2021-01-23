@@ -26,9 +26,9 @@
         const websocket = new WebSocket(wsUri + '/' + id);
         websocket.onopen = function (evt) {
             onOpen(evt)
-            websocket.send(JSON.stringify({action: {'@type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x: 1, y: 1}}}));
-            websocket.send(JSON.stringify({action: {'@type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x: 1, y: 1}}}));
-            websocket.send(JSON.stringify({action: {'@type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x: 1, y: 1}}}));
+            websocket.send(JSON.stringify({action: {'__type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x: 1, y: 1}}}));
+            websocket.send(JSON.stringify({action: {'__type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x: 1, y: 1}}}));
+            websocket.send(JSON.stringify({action: {'__type': 'nl.hiddewieringa.game.tictactoe.PlaceMarkLocation', location: {x: 1, y: 1}}}));
         };
         websocket.onclose = function (evt) {
             onClose(evt)

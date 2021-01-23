@@ -16,6 +16,8 @@ import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.core.PlayerId
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
+import nl.hiddewieringa.game.taipan.card.Card
+import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
@@ -42,10 +44,18 @@ class WebSocketController(
     private val template = UriTemplate(URI_TEMPLATE)
 
     private val typeValidator = BasicPolymorphicTypeValidator.builder()
+        .allowIfBaseType(Set::class.java)
+        .allowIfSubType(Set::class.java)
         .allowIfBaseType(Event::class.java)
         .allowIfSubType(Event::class.java)
         .allowIfBaseType(PlayerActions::class.java)
         .allowIfSubType(PlayerActions::class.java)
+
+        // TODO make this some 'safe' game entity interface
+        .allowIfBaseType(Card::class.java)
+        .allowIfSubType(Card::class.java)
+        .allowIfBaseType(ThreeWayPass::class.java)
+        .allowIfSubType(ThreeWayPass::class.java)
         .build()
 
     private val objectMapper = jacksonObjectMapper()
@@ -91,6 +101,7 @@ class WebSocketController(
     private fun WebSocketSession.eventMessage(data: Any, state: Any) =
         textMessage(objectMapper.writeValueAsString(WrappedEvent(data, state)))
 
+    // TODO add exception handling and send message when something is wrong with the payload.
     private fun <A : PlayerActions> readAction(message: WebSocketMessage): A =
         objectMapper.readValue<WrappedAction<A>>(message.payloadAsText).action
 
