@@ -198,6 +198,7 @@ external interface GamePlay : GameSlug {
 external interface StateEvent {
     val event: Json?
     val state: Json?
+    val playerId: Array<String?>
 }
 
 val PlayComponent = functionalComponent<GamePlay> { params ->
@@ -207,6 +208,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
 
     val (connected, setConnected) = useState(false)
     val (gameState, setGameState) = useState<Json?>(null)
+    val (playerId, setPlayerId) = useState<String?>(null)
 
     val webSocket = useRef<WebSocket?>(null)
 
@@ -222,8 +224,9 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         }
         socket.onmessage = {
             val stateEvent = JSON.parse<StateEvent>(it.data.unsafeCast<String>())
-            console.info("message", it.data, "event", stateEvent.event, "state", stateEvent.state)
+            console.info("message", it.data, "event", stateEvent.event, "state", stateEvent.state, "player", stateEvent.playerId)
             setGameState(stateEvent.state)
+            setPlayerId(stateEvent.playerId[1])
         }
         socket.onerror = {
             console.info("error", it)
@@ -250,8 +253,8 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
 
     div {
 
-        div("uk-margin") {
-            ul("uk-breadcrumb") {
+        div("uk-margin uk-flex") {
+            ul("uk-breadcrumb uk-flex-auto") {
                 routeLink("") {
                     +"Home"
                 }
@@ -262,16 +265,17 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
                     +"Play"
                 }
             }
-        }
 
-        p {
-            +"Game $gameSlug instance $instanceId player $playerSlotId"
-        }
-        p {
-            if (connected) {
-                +"websocket connected"
-            } else {
-                +"websocket disconnected"
+            div {
+                if (connected) {
+                    span("uk-label uk-label-success") {
+                        +"Connected"
+                    }
+                } else {
+                    span("uk-label uk-label-danger") {
+                        +"Disconnected"
+                    }
+                }
             }
         }
 
@@ -280,11 +284,13 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
                 child(TicTacToeComponent) {
                     attrs.dispatchAction = dispatchAction
                     attrs.gameState = gameState
+                    attrs.playerId = playerId
                 }
             }
             "tai-pan" -> child(TaiPanComponent) {
                 attrs.dispatchAction = dispatchAction
                 attrs.gameState = gameState
+                attrs.playerId = playerId
             }
             else -> {
             }

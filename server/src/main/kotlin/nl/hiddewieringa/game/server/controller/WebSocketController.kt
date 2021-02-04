@@ -34,7 +34,7 @@ import java.util.*
 private val logger = KotlinLogging.logger {}
 
 data class WrappedAction<A : PlayerActions>(val action: A)
-data class WrappedEvent(val event: Any?, val state: Any)
+data class WrappedEvent(val event: Any?, val state: Any, val playerId: PlayerId)
 
 @Component
 class WebSocketController(
@@ -90,23 +90,23 @@ class WebSocketController(
         // The initial state is published directly
         val stateProvider: (PID) -> S = gameInstance.stateProvider as (PID) -> S
         val initialState = stateProvider(playerSlot.playerId as PID)
-        val initialStateFlux = Flux.just(session.stateMessage(initialState))
+        val initialStateFlux = Flux.just(session.stateMessage(initialState, playerSlot.playerId))
         val events = playerSlot.receiveChannel.receiveAsFlow().asFlux()
-            .map { (event, state) -> session.eventMessage(event, state) }
+            .map { (event, state) -> session.eventMessage(event, state, playerSlot.playerId) }
 
         return session.send(initialStateFlux.concatWith(events))
             .doFinally { playerSlot.decreaseReference() }
     }
 
-    private fun WebSocketSession.eventMessage(data: Any, state: Any) =
-        textMessage(objectMapper.writeValueAsString(WrappedEvent(data, state)))
+    private fun WebSocketSession.eventMessage(data: Any, state: Any, playerId: PlayerId) =
+        textMessage(objectMapper.writeValueAsString(WrappedEvent(data, state, playerId)))
 
     // TODO add exception handling and send message when something is wrong with the payload.
     private fun <A : PlayerActions> readAction(message: WebSocketMessage): A =
         objectMapper.readValue<WrappedAction<A>>(message.payloadAsText).action
 
-    private fun WebSocketSession.stateMessage(state: Any) =
-        textMessage(objectMapper.writeValueAsString(WrappedEvent(null, state)))
+    private fun WebSocketSession.stateMessage(state: Any, playerId: PlayerId) =
+        textMessage(objectMapper.writeValueAsString(WrappedEvent(null, state, playerId)))
 
     companion object {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"

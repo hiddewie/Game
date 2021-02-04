@@ -33,9 +33,9 @@ dependencies {
     implementation(npm("react-scripts", "4.0.1"))
 
     //Kotlin Styled (chapter 3)
-//    implementation("org.jetbrains:kotlin-styled:5.2.0-pre.134-kotlin-1.4.10")
-//    implementation(npm("styled-components", "~5.5.0"))
-//    implementation(npm("inline-style-prefixer", "~6.0.0"))
+    implementation("org.jetbrains:kotlin-styled:5.2.0-pre.134-kotlin-1.4.10")
+    implementation(npm("styled-components", "~5.2.0"))
+    implementation(npm("inline-style-prefixer", "~6.0.0"))
 
     //Video Player (chapter 7)
 //    implementation(npm("react-player", "~2.6.0"))

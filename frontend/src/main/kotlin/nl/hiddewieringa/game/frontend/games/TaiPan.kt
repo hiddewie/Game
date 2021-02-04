@@ -22,6 +22,7 @@ external interface Card {
 external interface TaiPanProps : RProps {
     var gameState: Json?
     var dispatchAction: (event: Json) -> Unit
+    var playerId: String?
 }
 
 class ExchangeCards (

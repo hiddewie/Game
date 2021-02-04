@@ -24,8 +24,8 @@ data class TicTacToePlay(
     override fun applyEvent(event: TicTacToeEvent): TicTacToeState =
         when (event) {
             IllegalMove -> when (playerToPlay) {
-                TwoPlayerId.PLAYER1 -> PlayerWon(TwoPlayerId.PLAYER2)
-                TwoPlayerId.PLAYER2 -> PlayerWon(TwoPlayerId.PLAYER1)
+                TwoPlayerId.PLAYER1 -> PlayerWon(board, TwoPlayerId.PLAYER2)
+                TwoPlayerId.PLAYER2 -> PlayerWon(board, TwoPlayerId.PLAYER1)
             }
 
             is PlayerPlacedMark -> {
@@ -40,9 +40,9 @@ data class TicTacToePlay(
 
             is GameEnded ->
                 if (event.playerWon == null) {
-                    NoPlayerWon
+                    NoPlayerWon(board)
                 } else {
-                    PlayerWon(event.playerWon)
+                    PlayerWon(board, event.playerWon)
                 }
         }
 
@@ -88,9 +88,9 @@ data class TicTacToePlay(
 
     private fun playerWon(board: Array<Array<GameMark?>>, mark: GameMark): Boolean =
         (0 until 3).any { j -> (0 until 3).all { i -> board[j][i] == mark } } ||
-            (0 until 3).any { j -> (0 until 3).all { i -> board[i][j] == mark } } ||
-            (0 until 3).all { i -> board[i][i] == mark } ||
-            (0 until 3).all { i -> board[i][2 - i] == mark }
+                (0 until 3).any { j -> (0 until 3).all { i -> board[i][j] == mark } } ||
+                (0 until 3).all { i -> board[i][i] == mark } ||
+                (0 until 3).all { i -> board[i][2 - i] == mark }
 
     private fun markForPlayer(playerId: TwoPlayerId): GameMark =
         when (playerId) {
@@ -127,8 +127,8 @@ sealed class TicTacToePlayerActions : PlayerActions
 data class PlaceMarkLocation(val location: Location) : TicTacToePlayerActions()
 
 sealed class TicTacToeGameResult : TicTacToeState()
-data class PlayerWon(val player: TwoPlayerId) : TicTacToeGameResult()
-object NoPlayerWon : TicTacToeGameResult()
+data class PlayerWon(val board: Array<Array<GameMark?>>, val player: TwoPlayerId) : TicTacToeGameResult()
+data class NoPlayerWon(val board: Array<Array<GameMark?>>) : TicTacToeGameResult()
 
 class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> {
 
@@ -142,7 +142,7 @@ class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent,
                 }
                 is PlayerWon -> {
                 }
-                NoPlayerWon -> {
+                is NoPlayerWon -> {
                 }
             }
 
@@ -155,7 +155,7 @@ class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent,
                     }
                     is PlayerWon -> {
                     }
-                    NoPlayerWon -> {
+                    is NoPlayerWon -> {
                     }
                 }
             }
