@@ -19,6 +19,7 @@ data class GameDetails<
         >(
     val name: String,
     val slug: String,
+    val description: String,
     val gameFactory: (M) -> S,
     val playerConfigurationFactory: (player: () -> P) -> PC,
     val defaultParameters: M,
@@ -30,8 +31,8 @@ class GameProvider {
 
     // TODO how will we handle seed?
     private val games = listOf<GameDetails<*, *, *, *, *, *, *, *>>(
-        GameDetails("TicTacToe", "tic-tac-toe", { TicTacToePlay() }, { player: () -> Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> -> TwoPlayers(player(), player()) }, TicTacToeGameParameters, { this }),
-        GameDetails("TaiPan", "tai-pan", { parameters -> TaiPan(parameters) }, { player: () -> Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TwoTeamPlayerId, TaiPanPlayerState> -> TwoTeams(TwoPlayers(player(), player()), TwoPlayers(player(), player())) }, TaiPanGameParameters(1000, 0), TaiPanState::toPlayerState),
+        GameDetails("TicTacToe", "tic-tac-toe", "A game for two players that place alternating crosses and circles.", { TicTacToePlay() }, { player: () -> Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> -> TwoPlayers(player(), player()) }, TicTacToeGameParameters, { this }),
+        GameDetails("TaiPan", "tai-pan", "A two two-player team trick taking tactical card game.", { parameters -> TaiPan(parameters) }, { player: () -> Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TwoTeamPlayerId, TaiPanPlayerState> -> TwoTeams(TwoPlayers(player(), player()), TwoPlayers(player(), player())) }, TaiPanGameParameters(1000, 0), TaiPanState::toPlayerState),
     )
 
     fun games(): List<GameDetails<*, *, *, *, *, *, *, *>> =

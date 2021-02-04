@@ -4,6 +4,8 @@ import kotlinx.browser.window
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
 import kotlinx.coroutines.launch
+import kotlinx.html.ButtonType
+import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.frontend.games.TaiPanComponent
 import nl.hiddewieringa.game.frontend.games.TicTacToeComponent
@@ -21,6 +23,7 @@ import kotlin.js.json
 // TODO remove, include from the common compiled models
 external interface GameDetails {
     val slug: String
+    val description: String
 }
 
 val GamesComponent = functionalComponent<RProps> {
@@ -45,16 +48,32 @@ val GamesComponent = functionalComponent<RProps> {
     }
 
     div {
-        h1 { +"Games" }
-        p {
-            +"loaded: ${if (isLoaded) "true" else "false"}"
+
+        if (!isLoaded) {
+            div("uk-spinner") {}
+            return@div
         }
-        ul {
+
+        div("uk-grid uk-child-width-1-4") {
             games.map { item ->
-                li {
-                    key = item.slug
-                    routeLink("/open/${item.slug}") {
-                        +item.slug
+                div {
+                    div("uk-card uk-card-default") {
+                        key = item.slug
+                        div("uk-card-header") {
+                            h3 {
+                                +item.slug
+                            }
+                        }
+                        div("uk-card-body") {
+                            +item.description
+                        }
+                        div("uk-card-footer") {
+                            routeLink("/open/${item.slug}") {
+                                button(null, null, ButtonType.button, "uk-button uk-button-primary") {
+                                    +"Play"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -67,9 +86,15 @@ external interface GameSlug : RProps {
 }
 
 // TODO remove, include from the common compiled models
+
+external interface OpenGamePlayerSlot {
+    val id: String
+    val name: String
+}
+
 external interface OpenGame {
     val id: String
-    val playerSlotIds: Array<String>
+    val playerSlotIds: Array<OpenGamePlayerSlot>
 }
 
 val OpenGamesComponent = functionalComponent<GameSlug> { params ->
@@ -104,17 +129,32 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
         fetchData()
     }
 
-    val listItems = {
-        ul {
-            openGames.map { item ->
-                li {
-                    key = item.id
-                    ul {
-                        item.playerSlotIds.map { playerSlotId ->
-                            li {
-                                key = playerSlotId
-                                routeLink("/play/${gameSlug}/${item.id}/${playerSlotId}") {
-                                    +"${item.id} ${Typography.mdash} ${playerSlotId}"
+    val listItems: RDOMBuilder<DIV>.() -> Unit = {
+        if (openGames.isEmpty()) {
+            p {
+                +"No open games"
+            }
+        } else {
+            div("uk-grid uk-child-width-1-4") {
+                openGames.map { item ->
+                    div {
+                        key = item.id
+                        div("uk-card uk-card-default") {
+                            div("uk-card-header") {
+                                h3 {
+                                    +"Game ${item.id}"
+                                }
+                            }
+                            div("uk-card-body") {
+                                item.playerSlotIds.map { playerSlot ->
+                                    routeLink("/play/${gameSlug}/${item.id}/${playerSlot.id}") {
+                                        button(null, null, ButtonType.button, "uk-button uk-button-default uk-width-1-1") {
+                                            span {
+                                                attrs["uk-icon"] = "play"
+                                            }
+                                            +playerSlot.name
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -125,10 +165,25 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
     }
 
     div {
+
+        div("uk-margin") {
+            ul("uk-breadcrumb") {
+                routeLink("") {
+                    +"Home"
+                }
+                span {
+                    +"$gameSlug open games"
+                }
+            }
+        }
+
         listItems()
-        button {
-            attrs.onClickFunction = { startGame() }
-            +"START"
+
+        div("uk-margin") {
+            button(null, null, ButtonType.button, "uk-button uk-button-primary") {
+                attrs.onClickFunction = { startGame() }
+                +"Start a new game"
+            }
         }
     }
 }
@@ -194,6 +249,21 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     }
 
     div {
+
+        div("uk-margin") {
+            ul("uk-breadcrumb") {
+                routeLink("") {
+                    +"Home"
+                }
+                routeLink("/open/$gameSlug") {
+                    +gameSlug
+                }
+                span {
+                    +"Play"
+                }
+            }
+        }
+
         p {
             +"Game $gameSlug instance $instanceId player $playerSlotId"
         }
@@ -224,7 +294,6 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
 
 val AppComponent = functionalComponent<RProps> {
     StrictMode {
-
         browserRouter {
             switch {
                 route("/", exact = true) {

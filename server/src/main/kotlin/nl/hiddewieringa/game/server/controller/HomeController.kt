@@ -1,5 +1,6 @@
 package nl.hiddewieringa.game.server.controller
 
+import nl.hiddewieringa.game.server.games.GameInstance
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import nl.hiddewieringa.game.server.games.GameProvider
 import org.springframework.web.bind.annotation.GetMapping
@@ -14,19 +15,25 @@ class HomeController(
     val gameInstanceProvider: GameInstanceProvider,
 ) {
 
-    data class GameListItem(val slug: String, val name: String)
+    data class GameListItem(val slug: String, val name: String, val description: String)
 
     @GetMapping("games")
     fun games(): List<GameListItem> =
         gameProvider.games()
-            .map { GameListItem(it.slug, it.name) }
+            .map { GameListItem(it.slug, it.name, it.description) }
 
-    data class OpenGame(val id: UUID, val playerSlotIds: Set<UUID>)
+    data class OpenGamePlayerSlot(val id: UUID, val name: String)
+    data class OpenGame(val id: UUID, val playerSlotIds: List<OpenGamePlayerSlot>)
 
     @GetMapping("games/{gameSlug}/open")
     fun openGames(@PathVariable gameSlug: String): List<OpenGame> =
         gameInstanceProvider.openGames(gameSlug)
-            .map { OpenGame(it.id, it.playerSlots.keys) }
+            .map(::generateOpenGames)
+
+    private fun generateOpenGames(gameInstance: GameInstance<*, *, *, *>) =
+        OpenGame(gameInstance.id, gameInstance.playerSlots
+            .filterValues { it.referenceCount.get() == 0 }
+            .map { (key, value) -> OpenGamePlayerSlot(key, value.playerId.toString()) })
 
     @PostMapping("games/{gameSlug}/start")
     suspend fun startGame(@PathVariable gameSlug: String): UUID =
