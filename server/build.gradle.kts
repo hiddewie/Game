@@ -36,10 +36,20 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
-        freeCompilerArgs += listOf(
+        freeCompilerArgs = freeCompilerArgs + listOf(
             "-Xjsr305=strict"
         )
     }
+}
+
+tasks.create<Copy>("copyCompiledFrontend") {
+    dependsOn(":frontend:build")
+
+    from(project(":frontend").file("build/distributions"))
+    into(buildDir.resolve("resources/main/public"))
+}
+tasks.processResources {
+    dependsOn("copyCompiledFrontend")
 }
 
 application {
