@@ -13,10 +13,7 @@ import org.w3c.dom.WebSocket
 import org.w3c.fetch.RequestInit
 import react.*
 import react.dom.*
-import react.router.dom.browserRouter
-import react.router.dom.route
-import react.router.dom.routeLink
-import react.router.dom.switch
+import react.router.dom.*
 import kotlin.js.Json
 import kotlin.js.json
 
@@ -300,7 +297,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
 
 val AppComponent = functionalComponent<RProps> {
     StrictMode {
-        browserRouter {
+        hashRouter {
             switch {
                 route("/", exact = true) {
                     child(GamesComponent)
