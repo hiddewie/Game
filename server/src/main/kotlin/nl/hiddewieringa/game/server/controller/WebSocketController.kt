@@ -1,9 +1,5 @@
 package nl.hiddewieringa.game.server.controller
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.collect
@@ -43,23 +39,23 @@ class WebSocketController(
 
     private val template = UriTemplate(URI_TEMPLATE)
 
-    private val typeValidator = BasicPolymorphicTypeValidator.builder()
-        .allowIfBaseType(Set::class.java)
-        .allowIfSubType(Set::class.java)
-        .allowIfBaseType(Event::class.java)
-        .allowIfSubType(Event::class.java)
-        .allowIfBaseType(PlayerActions::class.java)
-        .allowIfSubType(PlayerActions::class.java)
-
-        // TODO make this some 'safe' game entity interface
-        .allowIfBaseType(Card::class.java)
-        .allowIfSubType(Card::class.java)
-        .allowIfBaseType(ThreeWayPass::class.java)
-        .allowIfSubType(ThreeWayPass::class.java)
-        .build()
-
-    private val objectMapper = jacksonObjectMapper()
-        .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "__type")
+//    private val typeValidator = BasicPolymorphicTypeValidator.builder()
+//        .allowIfBaseType(Set::class.java)
+//        .allowIfSubType(Set::class.java)
+//        .allowIfBaseType(Event::class.java)
+//        .allowIfSubType(Event::class.java)
+//        .allowIfBaseType(PlayerActions::class.java)
+//        .allowIfSubType(PlayerActions::class.java)
+//
+//        // TODO make this some 'safe' game entity interface
+//        .allowIfBaseType(Card::class.java)
+//        .allowIfSubType(Card::class.java)
+//        .allowIfBaseType(ThreeWayPass::class.java)
+//        .allowIfSubType(ThreeWayPass::class.java)
+//        .build()
+//
+//    private val objectMapper = jacksonObjectMapper()
+//        .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "__type")
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val path = session.handshakeInfo.uri.path

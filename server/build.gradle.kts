@@ -7,11 +7,12 @@ dependencies {
 }
 
 plugins {
-    id("kotlin-application")
+    id("kotlin-jvm-application")
 
     id("org.springframework.boot") version "2.4.1"
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
     kotlin("plugin.spring") version "1.4.21"
+    kotlin("plugin.serialization") version "1.4.21"
 }
 
 group = "nl.hiddewieringa.game"
@@ -21,11 +22,12 @@ dependencies {
 //    implementation("org.springframework.boot:spring-boot-starter-rsocket")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 //    implementation("org.springframework.boot:spring-boot-starter-websocket")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+//    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
 
     // Logging
     implementation("io.github.microutils:kotlin-logging:1.12.0")

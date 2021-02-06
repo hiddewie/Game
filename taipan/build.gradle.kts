@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("kotlin-library")
+    id("kotlin-jvm-library")
 }
 
 dependencies {
@@ -10,7 +10,7 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions {
-        freeCompilerArgs += listOf(
+        freeCompilerArgs = freeCompilerArgs + listOf(
             "-Xuse-experimental=kotlin.time.ExperimentalTime",
             "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
         )
