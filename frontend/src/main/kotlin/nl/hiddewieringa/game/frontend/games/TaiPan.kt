@@ -25,7 +25,7 @@ external interface TaiPanProps : RProps {
     var playerId: String?
 }
 
-class ExchangeCards (
+class ExchangeCards(
     val left: Card?,
     val forward: Card?,
     val right: Card?,
@@ -39,8 +39,32 @@ private fun typed(type: String, map: Json): Json {
 private fun typed(type: String): Json =
     typed(type, json())
 
+data class TaiPanGameState(
+    val playersToPlay: List<String>,
+    val cards: List<Card>,
+    val numberOfCardsPerPlayer: Map<String, Int>,
+    val taiPannedPlayers: Map<String, String>,
+    val cardsInGame: List<Card>,
+    val score: Map<String, Int>,
+    val roundIndex: Int?,
+    val trickIndex: Int?,
+)
+
+private fun parseGameState(state: Json?) =
+    TaiPanGameState(
+        (state?.get("playersToPlay") as? Array<String> ?: emptyArray()).toList(),
+        (state?.get("cards") as? Array<Array<Card>> ?: emptyArray()).map { it[1] },
+        state?.get("numberOfCardsPerPlayer") as? Map<String, Int> ?: emptyMap(),
+        state?.get("taiPannedPlayers") as? Map<String, String> ?: emptyMap(),
+        (state?.get("cardsInGame") as? Array<Array<Card>> ?: emptyArray()).map { it[1] },
+        state?.get("score") as? Map<String, Int> ?: emptyMap(),
+        state?.get("roundIndex") as? Int?,
+        state?.get("trickIndex") as? Int?,
+    )
+
+
 val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
-    val gameState = props.gameState
+    val gameState = parseGameState(props.gameState)
     val dispatchAction = props.dispatchAction
 
     val (selectedCards, setSelectedCards) = useState(emptySet<Card>())
@@ -84,26 +108,14 @@ val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
         setSelectedCards(selectedCards.filterNot { it.__type == card.__type && it.value == card.value && it.suit == card.suit }.toSet())
     }
 
-    if (gameState == null) {
-        p {
-            +"TaiPan"
-            +"No state"
-        }
-        return@functionalComponent
-    }
-
-    val playerId = gameState["playerId"]
+    val playerId = gameState.playersToPlay
 
     div {
-        p {
-            +"TaiPan"
-        }
-        +"Type ${gameState["__type"]?.toString() ?: "no type"}"
-        +"Player Id $playerId"
+        +"Players to play ${playerId.joinToString(", ")}"
 
         ul {
-            val cards = gameState["cards"] as? Array<Array<Card>>
-            cards?.get(1)?.map { card ->
+            val cards = gameState.cards
+            cards.map { card ->
                 li {
                     input {
                         attrs.type = InputType.checkBox

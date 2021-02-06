@@ -32,7 +32,7 @@ class TicTacToeTest {
                 { this },
             )
 
-            assertEquals(NoPlayerWon, gameResult.await())
+            assertEquals(NoPlayerWon(arrayOf(arrayOf(), arrayOf(), arrayOf())), gameResult.await())
         }
     }
 
@@ -54,7 +54,7 @@ class TicTacToeTest {
                 { this },
             )
 
-            assertEquals(PlayerWon(TwoPlayerId.PLAYER2), gameResult.await())
+            assertEquals(PlayerWon(arrayOf(), TwoPlayerId.PLAYER2), gameResult.await())
         }
     }
 
@@ -76,7 +76,7 @@ class TicTacToeTest {
                 { this },
             )
 
-            assertEquals(PlayerWon(TwoPlayerId.PLAYER1), gameResult.await())
+            assertEquals(PlayerWon(arrayOf(), TwoPlayerId.PLAYER1), gameResult.await())
         }
     }
 
@@ -97,7 +97,7 @@ class TicTacToeTest {
                     }
                     is PlayerWon -> {
                     }
-                    NoPlayerWon -> {
+                    is NoPlayerWon -> {
                     }
                 }
 
@@ -110,7 +110,7 @@ class TicTacToeTest {
                         }
                         is PlayerWon -> {
                         }
-                        NoPlayerWon -> {
+                        is NoPlayerWon -> {
                         }
                     }
                 }
