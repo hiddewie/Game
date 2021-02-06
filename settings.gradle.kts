@@ -18,6 +18,9 @@ include(
     // Frontend
     "frontend",
 
+    // Common models between frontend and backend (may be merged later)
+    "common",
+
     // Game implementations
     "tictactoe",
     "taipan"

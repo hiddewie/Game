@@ -1,11 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-dependencies {
-    implementation(project(":core"))
-    implementation(project(":taipan"))
-    implementation(project(":tictactoe"))
-}
-
 plugins {
     id("kotlin-jvm-application")
 
@@ -19,6 +13,11 @@ group = "nl.hiddewieringa.game"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
+    implementation(project(":common"))
+    implementation(project(":core"))
+    implementation(project(":taipan"))
+    implementation(project(":tictactoe"))
+
 //    implementation("org.springframework.boot:spring-boot-starter-rsocket")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 //    implementation("org.springframework.boot:spring-boot-starter-websocket")
@@ -27,7 +26,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 
     // Logging
     implementation("io.github.microutils:kotlin-logging:1.12.0")

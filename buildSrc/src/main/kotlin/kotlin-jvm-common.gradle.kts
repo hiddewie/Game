@@ -1,11 +1,10 @@
-import org.gradle.api.JavaVersion
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    id("kotlin-common")
     kotlin("jvm")
-    id("org.jmailen.kotlinter")
 }
 
 repositories {
@@ -41,10 +40,4 @@ tasks.withType<KotlinCompile> {
             "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
         )
     }
-}
-
-kotlinter {
-    disabledRules = arrayOf(
-        "no-wildcard-imports"
-    )
 }

@@ -1,5 +1,6 @@
 plugins {
     kotlin("js")
+    kotlin("plugin.serialization") version "1.4.21"
 }
 
 group = "nl.hiddewieringa.game"
@@ -20,6 +21,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":common"))
+
     implementation(kotlin("stdlib-js"))
 
     //React, React DOM + Wrappers (chapter 3)
@@ -49,4 +52,7 @@ dependencies {
     // Games
 //    implementation(project(":taipan"))
 //    implementation(project(":tictactoe"))
+
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 }
