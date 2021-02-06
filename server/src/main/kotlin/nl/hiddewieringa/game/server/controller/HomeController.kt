@@ -31,9 +31,12 @@ class HomeController(
             .map(::generateOpenGames)
 
     private fun generateOpenGames(gameInstance: GameInstance<*, *, *, *>) =
-        OpenGame(gameInstance.id, gameInstance.playerSlots
-            .filterValues { it.referenceCount.get() == 0 }
-            .map { (key, value) -> OpenGamePlayerSlot(key, value.playerId.toString()) })
+        OpenGame(
+            gameInstance.id,
+            gameInstance.playerSlots
+                .filterValues { it.referenceCount.get() == 0 }
+                .map { (key, value) -> OpenGamePlayerSlot(key, value.playerId.toString()) }
+        )
 
     @PostMapping("games/{gameSlug}/start")
     suspend fun startGame(@PathVariable gameSlug: String): UUID =

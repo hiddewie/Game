@@ -69,7 +69,7 @@ class GameInstanceProvider(
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
     suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
-            start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
+    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
 
         val instanceId = UUID.randomUUID()
         val parameters = gameDetails.defaultParameters

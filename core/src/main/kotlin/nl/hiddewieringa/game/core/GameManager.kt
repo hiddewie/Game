@@ -22,7 +22,7 @@ class StatefulJob<S : GameState<S>>(
 class GameManager {
 
     suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS>
-            play(
+    play(
         scope: CoroutineScope,
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,

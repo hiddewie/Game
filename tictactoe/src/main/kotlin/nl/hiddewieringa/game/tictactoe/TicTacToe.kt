@@ -88,9 +88,9 @@ data class TicTacToePlay(
 
     private fun playerWon(board: Array<Array<GameMark?>>, mark: GameMark): Boolean =
         (0 until 3).any { j -> (0 until 3).all { i -> board[j][i] == mark } } ||
-                (0 until 3).any { j -> (0 until 3).all { i -> board[i][j] == mark } } ||
-                (0 until 3).all { i -> board[i][i] == mark } ||
-                (0 until 3).all { i -> board[i][2 - i] == mark }
+            (0 until 3).any { j -> (0 until 3).all { i -> board[i][j] == mark } } ||
+            (0 until 3).all { i -> board[i][i] == mark } ||
+            (0 until 3).all { i -> board[i][2 - i] == mark }
 
     private fun markForPlayer(playerId: TwoPlayerId): GameMark =
         when (playerId) {

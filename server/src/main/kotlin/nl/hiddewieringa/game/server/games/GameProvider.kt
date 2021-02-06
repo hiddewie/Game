@@ -10,15 +10,15 @@ import nl.hiddewieringa.game.tictactoe.state.toPlayerState
 import org.springframework.stereotype.Component
 
 data class GameDetails<
-        M : GameParameters,
-        P : Player<M, E, A, PID, PS>,
-        A : PlayerActions,
-        E : Event,
-        PID : PlayerId,
-        PC : PlayerConfiguration<PID, P>,
-        S : GameState<S>,
-        PS : Any,
-        >(
+    M : GameParameters,
+    P : Player<M, E, A, PID, PS>,
+    A : PlayerActions,
+    E : Event,
+    PID : PlayerId,
+    PC : PlayerConfiguration<PID, P>,
+    S : GameState<S>,
+    PS : Any,
+    >(
     val name: String,
     val slug: String,
     val description: String,
