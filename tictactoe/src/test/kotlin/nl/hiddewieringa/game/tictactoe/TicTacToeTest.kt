@@ -9,6 +9,7 @@ import nl.hiddewieringa.game.core.Player
 import nl.hiddewieringa.game.core.TwoPlayerId
 import nl.hiddewieringa.game.core.TwoPlayers
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -30,9 +31,9 @@ class TicTacToeTest {
                 },
                 TicTacToeGameParameters,
                 { this },
-            )
+            ).await()
 
-            assertEquals(NoPlayerWon(arrayOf(arrayOf(), arrayOf(), arrayOf())), gameResult.await())
+            assertTrue(gameResult is NoPlayerWon)
         }
     }
 
@@ -52,9 +53,10 @@ class TicTacToeTest {
                 },
                 TicTacToeGameParameters,
                 { this },
-            )
+            ).await()
 
-            assertEquals(PlayerWon(arrayOf(), TwoPlayerId.PLAYER2), gameResult.await())
+            assertTrue(gameResult is PlayerWon)
+            assertEquals(TwoPlayerId.PLAYER2, (gameResult as PlayerWon).player)
         }
     }
 
@@ -74,9 +76,10 @@ class TicTacToeTest {
                 },
                 TicTacToeGameParameters,
                 { this },
-            )
+            ).await()
 
-            assertEquals(PlayerWon(arrayOf(), TwoPlayerId.PLAYER1), gameResult.await())
+            assertTrue(gameResult is PlayerWon)
+            assertEquals(TwoPlayerId.PLAYER1, (gameResult as PlayerWon).player)
         }
     }
 
