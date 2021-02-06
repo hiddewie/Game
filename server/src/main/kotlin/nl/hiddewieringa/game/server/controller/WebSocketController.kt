@@ -7,7 +7,12 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import mu.KotlinLogging
+import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.core.PlayerId
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
@@ -26,8 +31,11 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+@Serializable
 data class WrappedAction<A : PlayerActions>(val action: A)
-data class WrappedEvent(val event: Any?, val state: Any, val playerId: PlayerId)
+
+@Serializable
+data class WrappedEvent<E : Event, S : Any>(val event: E?, val state: S, val playerId: PlayerId)
 
 @Component
 class WebSocketController(
@@ -53,6 +61,10 @@ class WebSocketController(
 //
 //    private val objectMapper = jacksonObjectMapper()
 //        .activateDefaultTypingAsProperty(typeValidator, ObjectMapper.DefaultTyping.OBJECT_AND_NON_CONCRETE, "__type")
+
+    private val serializer = Json {
+        classDiscriminator = "__type" // TODO #type, or the default?
+    }
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val path = session.handshakeInfo.uri.path
@@ -91,15 +103,15 @@ class WebSocketController(
             .doFinally { playerSlot.decreaseReference() }
     }
 
-    private fun WebSocketSession.eventMessage(data: Any, state: Any, playerId: PlayerId) =
-        textMessage(objectMapper.writeValueAsString(WrappedEvent(data, state, playerId)))
+    private fun <E : Event, S : Any> WebSocketSession.eventMessage(data: E, state: S, playerId: PlayerId) =
+        textMessage(serializer.encodeToString(WrappedEvent(data, state, playerId)))
 
     // TODO add exception handling and send message when something is wrong with the payload.
     private fun <A : PlayerActions> readAction(message: WebSocketMessage): A =
-        objectMapper.readValue<WrappedAction<A>>(message.payloadAsText).action
+        serializer.decodeFromString<WrappedAction<A>>(message.payloadAsText).action
 
-    private fun WebSocketSession.stateMessage(state: Any, playerId: PlayerId) =
-        textMessage(objectMapper.writeValueAsString(WrappedEvent(null, state, playerId)))
+    private fun <S : Any> WebSocketSession.stateMessage(state: S, playerId: PlayerId) =
+        textMessage(serializer.encodeToString(WrappedEvent(null, state, playerId)))
 
     companion object {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"
