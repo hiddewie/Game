@@ -1,27 +1,30 @@
 package nl.hiddewieringa.game.core
 
+import kotlinx.serialization.Serializable
+
 interface PlayerId
 
 sealed class PlayerConfiguration<ID : PlayerId, P : Player<*, *, *, *, *>>(
-    val allPlayers: Set<ID>
+    val allPlayers: Set<ID>,
 ) : Set<ID> by allPlayers {
     abstract fun player(id: ID): P
 }
 
 data class SinglePlayer<P : Player<*, *, *, *, *>>(
-    val player: P
+    val player: P,
 ) : PlayerConfiguration<SingletonPlayer, P>(setOf(SingletonPlayer.PLAYER)) {
     override fun player(id: SingletonPlayer) =
         player
 }
 
+@Serializable
 enum class SingletonPlayer : PlayerId {
     PLAYER
 }
 
 data class TwoPlayers<P : Player<*, *, *, *, *>>(
     val player1: P,
-    val player2: P
+    val player2: P,
 ) : PlayerConfiguration<TwoPlayerId, P>(setOf(TwoPlayerId.PLAYER1, TwoPlayerId.PLAYER2)) {
     override fun player(id: TwoPlayerId) =
         when (id) {
@@ -30,6 +33,7 @@ data class TwoPlayers<P : Player<*, *, *, *, *>>(
         }
 }
 
+@Serializable
 enum class TwoPlayerId : PlayerId {
     PLAYER1,
     PLAYER2
@@ -37,7 +41,7 @@ enum class TwoPlayerId : PlayerId {
 
 data class TwoTeams<P : Player<*, *, *, *, *>>(
     val team1: TwoPlayers<P>,
-    val team2: TwoPlayers<P>
+    val team2: TwoPlayers<P>,
 ) : PlayerConfiguration<TwoTeamPlayerId, P>(setOf(TwoTeamPlayerId.PLAYER1, TwoTeamPlayerId.PLAYER2, TwoTeamPlayerId.PLAYER3, TwoTeamPlayerId.PLAYER4)) {
     override fun player(id: TwoTeamPlayerId): P =
         when (id) {
@@ -54,6 +58,7 @@ data class TwoTeams<P : Player<*, *, *, *, *>>(
         }
 }
 
+@Serializable
 enum class TwoTeamPlayerId(
     val team: TwoTeamTeamId,
 ) : PlayerId {
@@ -65,6 +70,7 @@ enum class TwoTeamPlayerId(
 
 interface TeamId
 
+@Serializable
 enum class TwoTeamTeamId : TeamId {
     TEAM1,
     TEAM2

@@ -3,6 +3,7 @@ package nl.hiddewieringa.game.tictactoe
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.*
 
 sealed class TicTacToeState : GameState<TicTacToeState>
@@ -111,19 +112,31 @@ data class TicTacToePlay(
         }
 }
 
+@Serializable
 sealed class GameMark
+
+@Serializable
 object Cross : GameMark()
+
+@Serializable
 object Circle : GameMark()
+@Serializable
 data class Location(val x: Int, val y: Int)
 
+@Serializable
 sealed class TicTacToeEvent : Event
+@Serializable
 data class PlayerPlacedMark(val player: TwoPlayerId, val mark: GameMark, val location: Location) : TicTacToeEvent()
+@Serializable
 object IllegalMove : TicTacToeEvent()
+@Serializable
 data class GameEnded(val playerWon: TwoPlayerId?) : TicTacToeEvent()
 
 object TicTacToeGameParameters : GameParameters
 
+@Serializable
 sealed class TicTacToePlayerActions : PlayerActions
+@Serializable
 data class PlaceMarkLocation(val location: Location) : TicTacToePlayerActions()
 
 sealed class TicTacToeGameResult : TicTacToeState()

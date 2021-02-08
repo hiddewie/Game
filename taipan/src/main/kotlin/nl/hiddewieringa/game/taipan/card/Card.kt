@@ -1,9 +1,11 @@
 package nl.hiddewieringa.game.taipan.card
 
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.ACE
 
+@Serializable
 sealed class Card(
-    val points: Int
+    val points: Int,
 ) : Comparable<Card> {
 
     override fun compareTo(other: Card): Int =
@@ -25,6 +27,7 @@ sealed class Card(
         }
 }
 
+@Serializable
 enum class Suit {
     HEARTS,
     DIAMONDS,
@@ -35,6 +38,7 @@ enum class Suit {
 infix fun Int.of(suit: Suit): NumberedCard =
     NumberedCard(suit, this)
 
+@Serializable
 data class NumberedCard(val suit: Suit, val value: Int) : Card(
     when (value) {
         5 -> 5
@@ -44,7 +48,7 @@ data class NumberedCard(val suit: Suit, val value: Int) : Card(
 ) {
     init {
         require(value >= 2) { "The card value should be greater or equal to two." }
-        require(value <= NumberedCard.ACE) { "The card value should be less than or equal to ACE (14)." }
+        require(value <= ACE) { "The card value should be less than or equal to ACE ($ACE)." }
     }
 
     override fun toString() =
@@ -83,6 +87,7 @@ data class NumberedCard(val suit: Suit, val value: Int) : Card(
     }
 }
 
+@Serializable
 object Dragon : Card(25) {
     override fun toString(): String =
         "\uD83D\uDC09"
@@ -90,11 +95,13 @@ object Dragon : Card(25) {
     const val value = ACE + 1
 }
 
+@Serializable
 object Phoenix : Card(-25) {
     override fun toString(): String =
         "\uD83E\uDDA4"
 }
 
+@Serializable
 object Dog : Card(0) {
     override fun toString(): String =
         "\uD83D\uDC15"
@@ -102,6 +109,7 @@ object Dog : Card(0) {
     const val value = 0
 }
 
+@Serializable
 object Mahjong : Card(0) {
     override fun toString(): String =
         "1️⃣"
@@ -109,6 +117,7 @@ object Mahjong : Card(0) {
     const val value = 1
 }
 
+@Serializable
 data class ThreeWayPass(val left: Card, val forward: Card, val right: Card) {
     init {
         require(left != forward) { "Left should not be the same card as forward" }

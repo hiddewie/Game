@@ -16,7 +16,7 @@ repositories {
 kotlin {
     js(IR) {
         browser()
-//        binaries.executable()
+        binaries.executable()
     }
 }
 
@@ -52,7 +52,4 @@ dependencies {
     // Games
 //    implementation(project(":taipan"))
 //    implementation(project(":tictactoe"))
-
-    // Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
 }

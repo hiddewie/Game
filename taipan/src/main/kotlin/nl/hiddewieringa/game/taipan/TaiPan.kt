@@ -1,5 +1,6 @@
 package nl.hiddewieringa.game.taipan
 
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.taipan.card.*
 import java.util.*
@@ -673,7 +674,9 @@ data class TaiPanFinalScore(
 
 data class TaiPanGameParameters(val points: Int, val seed: Long) : GameParameters
 
+@Serializable
 sealed class PlayCardsAddon
+@Serializable
 data class PhoenixValue(val value: Int) : PlayCardsAddon() {
     init {
         require(value >= 2) { "The card value should be greater or equal to two." }
@@ -681,6 +684,7 @@ data class PhoenixValue(val value: Int) : PlayCardsAddon() {
     }
 }
 
+@Serializable
 data class MahjongRequest(val value: Int) : PlayCardsAddon() {
     init {
         require(value >= 2) { "The card value should be greater or equal to two." }

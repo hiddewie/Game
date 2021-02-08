@@ -1,11 +1,13 @@
 package nl.hiddewieringa.game.taipan.state
 
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.core.TwoTeamTeamId
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.Card
 import nl.hiddewieringa.game.taipan.card.fullDeck
 
+@Serializable
 data class TaiPanPlayerState(
     val playersToPlay: List<TwoTeamPlayerId>,
     val cards: List<Card>,

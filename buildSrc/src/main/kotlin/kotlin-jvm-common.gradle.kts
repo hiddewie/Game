@@ -14,8 +14,14 @@ repositories {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation(kotlin("stdlib-jdk8"))
+
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
 
+    // Serialization
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
+
+    // Testing
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.7.0")
 }
 

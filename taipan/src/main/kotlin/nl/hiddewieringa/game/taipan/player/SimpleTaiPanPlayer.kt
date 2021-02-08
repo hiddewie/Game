@@ -22,12 +22,6 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
                         hand = event.cards
                     }
                     is CardsHaveBeenPassed -> {
-//                        hand = state
-//                        hand = event.pass
-                    }
-                    is RoundBegan -> {
-                    }
-                    is TrickBegan -> {
                     }
                     is PlayerPlayedCards -> {
                         lastPlayedCards = event.cards
@@ -37,19 +31,6 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
                     is TrickWon -> {
                     }
                     is RoundEnded -> {
-                    }
-                    RequestPassCards -> send(passCards())
-                    RequestPlayCards -> {
-                        val action: TaiPanPlayerActions = when (val cardsToPlay = play()) {
-                            null -> Fold
-                            else -> PlayCards(cardsToPlay)
-                        }
-                        send(action)
-                    }
-                    RequestPassDragon -> send(PassDragonTrick(dragonPass()))
-                    is IllegalAction -> {
-                    }
-                    is ScoreUpdated -> {
                     }
                     is PlayerTaiPanned -> {
                     }
@@ -61,6 +42,11 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
                     }
                     is GameEnded -> {
                     }
+                    AllPlayersHaveReceivedCards -> {}
+                    AllPlayersHavePassedCards -> {}
+                    is DragonTrickWon -> {}
+                    is PlayerIsOutOfCards -> {}
+                    is IllegalAction -> {}
                 }
             }
         }

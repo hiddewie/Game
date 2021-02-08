@@ -1,15 +1,18 @@
 package nl.hiddewieringa.game.taipan.card
 
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.taipan.PhoenixValue
 import nl.hiddewieringa.game.taipan.PlayCardsAddon
 
+@Serializable
 sealed class CardCombination(
-    val cards: CardSet
+    val cards: CardSet,
 ) {
     fun contains(card: Card) =
         cards.any { it == card }
 }
 
+@Serializable
 data class HighCard(val card: Card, val value: Float) : CardCombination(setOf(card)) {
     constructor(card: Dragon) : this(card, card.value.toFloat())
     constructor(card: Dog) : this(card, card.value.toFloat())
@@ -17,7 +20,10 @@ data class HighCard(val card: Card, val value: Float) : CardCombination(setOf(ca
     constructor(card: NumberedCard) : this(card, card.value.toFloat())
 }
 
-sealed class Tuple(cards: CardSet, val value: Int) : CardCombination(cards)
+@Serializable
+sealed class Tuple(private val tupleCards: CardSet, val value: Int) : CardCombination(tupleCards)
+
+@Serializable
 data class NumberedTuple(val card1: NumberedCard, val card2: NumberedCard) : Tuple(setOf(card1, card2), card1.value) {
     init {
         require(card1.value == card2.value) { "The cards should be equal" }
@@ -25,14 +31,17 @@ data class NumberedTuple(val card1: NumberedCard, val card2: NumberedCard) : Tup
     }
 }
 
+@Serializable
 data class PhoenixTuple(val card1: NumberedCard, val card2: Phoenix) : Tuple(setOf(card1, card2), card1.value)
 
-sealed class Triple(cards: Set<Card>, val value: Int) : CardCombination(cards.toSet()) {
+@Serializable
+sealed class Triple(private val tripleCards: Set<Card>, val value: Int) : CardCombination(tripleCards.toSet()) {
     init {
         require(cards.size == 3) { "There should be three cards" }
     }
 }
 
+@Serializable
 data class NumberedTriple(val card1: NumberedCard, val card2: NumberedCard, val card3: NumberedCard) : Triple(setOf(card1, card2, card3), card1.value) {
     init {
         val allSequential = setOf(card1, card2, card3)
@@ -42,12 +51,14 @@ data class NumberedTriple(val card1: NumberedCard, val card2: NumberedCard, val 
     }
 }
 
+@Serializable
 data class PhoenixTriple(val card1: NumberedCard, val card2: NumberedCard, val card3: Phoenix) : Triple(setOf(card1, card2, card3), card1.value) {
     init {
         require(card1.value == card2.value) { "The card values should be equal" }
     }
 }
 
+@Serializable
 data class FullHouse(val tuple: Tuple, val triple: Triple) : CardCombination(tuple.cards + triple.cards) {
     val value: Int
 
@@ -58,6 +69,7 @@ data class FullHouse(val tuple: Tuple, val triple: Triple) : CardCombination(tup
     }
 }
 
+@Serializable
 data class TupleSequence(val tuples: List<Tuple>) : CardCombination(tuples.flatMapTo(mutableSetOf(), { it.cards })) {
     val minValue: Int
     val length = tuples.size
@@ -74,10 +86,12 @@ data class TupleSequence(val tuples: List<Tuple>) : CardCombination(tuples.flatM
     }
 }
 
-sealed class Straight(cards: CardSet, val minValue: Int) : CardCombination(cards) {
+@Serializable
+sealed class Straight(private val parentStraightCards: CardSet, val minValue: Int) : CardCombination(parentStraightCards) {
     val length = cards.size
 }
 
+@Serializable
 data class NumberedStraight(val straightCards: Set<NumberedCard>) : Straight(
     straightCards,
     straightCards.minOf { it.value }
@@ -91,6 +105,7 @@ data class NumberedStraight(val straightCards: Set<NumberedCard>) : Straight(
     }
 }
 
+@Serializable
 data class PhoenixStraight(val straightCards: Set<NumberedCard>, val phoenix: Phoenix, val phoenixValue: PhoenixValue) : Straight(
     straightCards + setOf(phoenix),
     Integer.min(straightCards.minOf { it.value }, phoenixValue.value)
@@ -104,6 +119,7 @@ data class PhoenixStraight(val straightCards: Set<NumberedCard>, val phoenix: Ph
     }
 }
 
+@Serializable
 data class MahjongStraight(val straightCards: Set<NumberedCard>, val mahjong: Mahjong) : Straight(
     straightCards + setOf(mahjong),
     1
@@ -119,6 +135,7 @@ data class MahjongStraight(val straightCards: Set<NumberedCard>, val mahjong: Ma
     }
 }
 
+@Serializable
 data class MahjongPhoenixStraight(val straightCards: Set<NumberedCard>, val mahjong: Mahjong, val phoenix: Phoenix, val phoenixValue: PhoenixValue) : Straight(
     straightCards + setOf(mahjong),
     1,
@@ -134,7 +151,10 @@ data class MahjongPhoenixStraight(val straightCards: Set<NumberedCard>, val mahj
     }
 }
 
-sealed class Bomb(cards: CardSet) : CardCombination(cards)
+@Serializable
+sealed class Bomb(private val privateBombCards: CardSet) : CardCombination(privateBombCards)
+
+@Serializable
 data class QuadrupleBomb(val bombCards: Set<NumberedCard>) : Bomb(bombCards) {
     val value = bombCards.minOf { it.value }
 
@@ -147,6 +167,7 @@ data class QuadrupleBomb(val bombCards: Set<NumberedCard>) : Bomb(bombCards) {
     }
 }
 
+@Serializable
 data class StraightBomb(val bombCards: Set<NumberedCard>) : Bomb(bombCards) {
     val value = bombCards.minOf { it.value }
     val length = bombCards.size

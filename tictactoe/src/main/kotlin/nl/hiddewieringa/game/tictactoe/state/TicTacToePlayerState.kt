@@ -1,8 +1,10 @@
 package nl.hiddewieringa.game.tictactoe.state
 
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.TwoPlayerId
 import nl.hiddewieringa.game.tictactoe.*
 
+@Serializable
 data class TicTacToePlayerState(
     val playerToPlay: TwoPlayerId?,
     val board: Array<Array<GameMark?>>,

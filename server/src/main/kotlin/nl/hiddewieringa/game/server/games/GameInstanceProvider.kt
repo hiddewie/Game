@@ -2,6 +2,7 @@ package nl.hiddewieringa.game.server.games
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.serialization.KSerializer
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
@@ -35,9 +36,16 @@ class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val gameSlug: String,
     val playerSlots: Map<UUID, PlayerSlot<A, E, S, PID>>,
     val stateProvider: (PID) -> S,
+    val actionSerializer: KSerializer<A>,
+    val eventSerializer: KSerializer<E>,
+    val stateSerializer: KSerializer<S>,
+    val playerIdSerializer: KSerializer<PID>,
 ) {
     val open: Boolean
         get() = playerSlots.values.any { it.referenceCount.get() == 0 }
+
+    fun playerState(playerSlotId: UUID): S =
+        stateProvider(playerSlots.getValue(playerSlotId).playerId)
 }
 
 class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any> : Player<M, E, A, PlayerId, S> {
@@ -89,7 +97,6 @@ class GameInstanceProvider(
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
-
         GlobalScope.async(threadPoolDispatcher) {
             val gameResult = startedJob.await()
 
@@ -97,22 +104,24 @@ class GameInstanceProvider(
             println("Game result of $instanceId: $gameResult")
         }
 
-        val playerSlots = playerConfiguration
-            .map { playerId ->
-                val player = playerConfiguration.player(playerId) as WebsocketPlayer<M, A, E, PS>
-                UUID.randomUUID() to PlayerSlot(
-                    playerId,
-                    player.actionChannel,
-                    player.eventChannel,
-                )
-            }
-            .toMap()
+        val playerSlots = playerConfiguration.associate { playerId ->
+            val player = playerConfiguration.player(playerId) as WebsocketPlayer<M, A, E, PS>
+            UUID.randomUUID() to PlayerSlot(
+                playerId,
+                player.actionChannel,
+                player.eventChannel,
+            )
+        }
 
         instances[instanceId] = GameInstance(
             instanceId,
             gameDetails.slug,
             playerSlots,
             { playerId: PID -> gameDetails.playerState.invoke(startedJob.stateSupplier(), playerId) },
+            gameDetails.actionSerializer,
+            gameDetails.eventSerializer,
+            gameDetails.stateSerializer,
+            gameDetails.playerIdSerializer,
         )
         logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots")
 

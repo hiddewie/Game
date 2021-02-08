@@ -1,5 +1,6 @@
 package nl.hiddewieringa.game.server.games
 
+import kotlinx.serialization.KSerializer
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
@@ -26,15 +27,51 @@ data class GameDetails<
     val playerConfigurationFactory: (player: () -> P) -> PC,
     val defaultParameters: M,
     val playerState: S.(PID) -> PS,
+    val actionSerializer: KSerializer<A>,
+    val eventSerializer: KSerializer<E>,
+    val stateSerializer: KSerializer<PS>,
+    val playerIdSerializer: KSerializer<PID>,
 )
 
 @Component
 class GameProvider {
 
+    private val ticTacToeDetails = GameDetails(
+        "TicTacToe",
+        "tic-tac-toe",
+        "A game for two players that place alternating crosses and circles.",
+        { TicTacToePlay() },
+        { player: () -> Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToePlayerState> ->
+            TwoPlayers(player(), player())
+        },
+        TicTacToeGameParameters,
+        TicTacToeState::toPlayerState,
+        TicTacToePlayerActions.serializer(),
+        TicTacToeEvent.serializer(),
+        TicTacToePlayerState.serializer(),
+        TwoPlayerId.serializer()
+    )
+
     // TODO how will we handle seed?
+    private val taiPanDetails = GameDetails(
+        "TaiPan",
+        "tai-pan",
+        "A two two-player team trick taking tactical card game.",
+        { parameters -> TaiPan(parameters) },
+        { player: () -> Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TwoTeamPlayerId, TaiPanPlayerState> ->
+            TwoTeams(TwoPlayers(player(), player()), TwoPlayers(player(), player()))
+        },
+        TaiPanGameParameters(1000, 0),
+        TaiPanState::toPlayerState,
+        TaiPanPlayerActions.serializer(),
+        TaiPanEvent.serializer(),
+        TaiPanPlayerState.serializer(),
+        TwoTeamPlayerId.serializer()
+    )
+
     private val games = listOf<GameDetails<*, *, *, *, *, *, *, *>>(
-        GameDetails("TicTacToe", "tic-tac-toe", "A game for two players that place alternating crosses and circles.", { TicTacToePlay() }, { player: () -> Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToePlayerState> -> TwoPlayers(player(), player()) }, TicTacToeGameParameters, TicTacToeState::toPlayerState),
-        GameDetails("TaiPan", "tai-pan", "A two two-player team trick taking tactical card game.", { parameters -> TaiPan(parameters) }, { player: () -> Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TwoTeamPlayerId, TaiPanPlayerState> -> TwoTeams(TwoPlayers(player(), player()), TwoPlayers(player(), player())) }, TaiPanGameParameters(1000, 0), TaiPanState::toPlayerState),
+        ticTacToeDetails,
+        taiPanDetails,
     )
 
     fun games(): List<GameDetails<*, *, *, *, *, *, *, *>> =
