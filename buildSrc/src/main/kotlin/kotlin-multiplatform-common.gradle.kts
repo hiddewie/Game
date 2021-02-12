@@ -7,15 +7,11 @@ repositories {
     jcenter()
 }
 
-dependencies {
-//    implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
-//    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
-}
-
 kotlin {
     jvm()
     js(IR) {
-        browser()
-        binaries.executable()
+        browser {
+            binaries.executable()
+        }
     }
 }
