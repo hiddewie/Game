@@ -5,7 +5,7 @@ import nl.hiddewieringa.game.core.TwoPlayerId
 import nl.hiddewieringa.game.tictactoe.*
 
 @Serializable
-data class TicTacToePlayerState(
+class TicTacToePlayerState(
     val playerToPlay: TwoPlayerId?,
     val board: Array<Array<GameMark?>>,
     val playerWon: TwoPlayerId?,

@@ -46,7 +46,7 @@ class WebSocketController(
     private val template = UriTemplate(URI_TEMPLATE)
 
     private val serializer = Json {
-        classDiscriminator = "__type" // TODO #type, or the default?
+//        classDiscriminator = "__type" // TODO #type, or the default?
     }
 
     override fun handle(session: WebSocketSession): Mono<Void> {

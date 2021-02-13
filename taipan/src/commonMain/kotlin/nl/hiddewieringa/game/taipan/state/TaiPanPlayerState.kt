@@ -10,10 +10,10 @@ import nl.hiddewieringa.game.taipan.card.fullDeck
 @Serializable
 data class TaiPanPlayerState(
     val playersToPlay: List<TwoTeamPlayerId>,
-    val cards: List<Card>,
+    val cards: List<Card>, // TODO sort
     val numberOfCardsPerPlayer: Map<TwoTeamPlayerId, Int>,
     val taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
-    val cardsInGame: List<Card>,
+    val cardsInGame: List<Card>, // TODO sort
     val points: Map<TwoTeamTeamId, Int>,
     val roundIndex: Int?,
     val trickIndex: Int?,

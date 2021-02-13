@@ -13,7 +13,6 @@ group = "nl.hiddewieringa.game"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
-    implementation(project(":common"))
     implementation(project(":core"))
     implementation(project(":taipan"))
     implementation(project(":tictactoe"))

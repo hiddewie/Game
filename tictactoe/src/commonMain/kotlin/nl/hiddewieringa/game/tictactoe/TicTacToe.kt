@@ -8,7 +8,7 @@ import nl.hiddewieringa.game.core.*
 
 sealed class TicTacToeState : GameState<TicTacToeState>
 
-data class TicTacToePlay(
+class TicTacToePlay(
     val board: Array<Array<GameMark?>>,
     val playerToPlay: TwoPlayerId,
 ) : TicTacToeState(), IntermediateGameState<TwoPlayerId, TicTacToePlayerActions, TicTacToeEvent, TicTacToeState> {
@@ -140,8 +140,8 @@ sealed class TicTacToePlayerActions : PlayerActions
 data class PlaceMarkLocation(val location: Location) : TicTacToePlayerActions()
 
 sealed class TicTacToeGameResult : TicTacToeState()
-data class PlayerWon(val board: Array<Array<GameMark?>>, val player: TwoPlayerId) : TicTacToeGameResult()
-data class NoPlayerWon(val board: Array<Array<GameMark?>>) : TicTacToeGameResult()
+class PlayerWon(val board: Array<Array<GameMark?>>, val player: TwoPlayerId) : TicTacToeGameResult()
+class NoPlayerWon(val board: Array<Array<GameMark?>>) : TicTacToeGameResult()
 
 class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> {
 

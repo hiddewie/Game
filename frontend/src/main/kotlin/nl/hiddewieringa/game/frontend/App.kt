@@ -7,14 +7,18 @@ import kotlinx.coroutines.launch
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import nl.hiddewieringa.game.frontend.games.TaiPanComponent
 import nl.hiddewieringa.game.frontend.games.TicTacToeComponent
 import org.w3c.dom.WebSocket
 import org.w3c.fetch.RequestInit
 import react.*
 import react.dom.*
-import react.router.dom.*
-import kotlin.js.Json
+import react.router.dom.hashRouter
+import react.router.dom.route
+import react.router.dom.routeLink
+import react.router.dom.switch
 import kotlin.js.json
 
 // TODO remove, include from the common compiled models
@@ -191,12 +195,20 @@ external interface GamePlay : GameSlug {
     val playerSlotId: String
 }
 
+val serializer = Json {  }
+
 // TODO add generics for game
-external interface StateEvent {
-    val event: Json?
-    val state: Json?
-    val playerId: Array<String?>
-}
+@Serializable
+class StateEvent(
+    val event: String?,
+    val state: String?,
+    val playerId: String?,
+)
+
+@Serializable
+class PublishedAction(
+    val action: String,
+)
 
 val PlayComponent = functionalComponent<GamePlay> { params ->
     val gameSlug = params.gameSlug
@@ -204,7 +216,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     val playerSlotId = params.playerSlotId
 
     val (connected, setConnected) = useState(false)
-    val (gameState, setGameState) = useState<Json?>(null)
+    val (gameState, setGameState) = useState<String?>(null)
     val (playerId, setPlayerId) = useState<String?>(null)
 
     val webSocket = useRef<WebSocket?>(null)
@@ -220,10 +232,11 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
             setConnected(false)
         }
         socket.onmessage = {
-            val stateEvent = JSON.parse<StateEvent>(it.data.unsafeCast<String>())
+            val stateEvent = serializer.decodeFromString(StateEvent.serializer(), it.data.unsafeCast<String>())
+//            val stateEvent = JSON.parse<StateEvent>(it.data.unsafeCast<String>())
             console.info("message", it.data, "event", stateEvent.event, "state", stateEvent.state, "player", stateEvent.playerId)
             setGameState(stateEvent.state)
-            setPlayerId(stateEvent.playerId[1])
+            setPlayerId(stateEvent.playerId)
         }
         socket.onerror = {
             console.info("error", it)
@@ -240,11 +253,9 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         }
     }
 
-    val dispatchAction = { action: Json ->
+    val dispatchAction = { action: String ->
         console.info("action", action)
-        webSocket.current?.send(JSON.stringify(json(
-            "action" to action
-        )))
+        webSocket.current?.send(serializer.encodeToString(PublishedAction.serializer(), PublishedAction(action)))
         Unit
     }
 

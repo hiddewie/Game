@@ -4,117 +4,91 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
+import nl.hiddewieringa.game.frontend.serializer
+import nl.hiddewieringa.game.taipan.*
+import nl.hiddewieringa.game.taipan.card.Card
+import nl.hiddewieringa.game.taipan.card.NumberedCard
+import nl.hiddewieringa.game.taipan.card.ThreeWayPass
+import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import org.w3c.dom.HTMLInputElement
 import react.RProps
 import react.dom.*
 import react.functionalComponent
 import react.useState
-import kotlin.js.Json
-import kotlin.js.json
-
-external interface Card {
-    val __type: String
-    val value: Int?
-    val suit: String?
-    val points: Int
-}
 
 external interface TaiPanProps : RProps {
-    var gameState: Json?
-    var dispatchAction: (event: Json) -> Unit
+    var gameState: String? // Json string
+    var dispatchAction: (event: String) -> Unit // Json encoded action
     var playerId: String?
 }
 
-class ExchangeCards(
-    val left: Card?,
-    val forward: Card?,
-    val right: Card?,
-)
-
-private fun typed(type: String, map: Json): Json {
-    map["__type"] = type
-    return map
-}
-
-private fun typed(type: String): Json =
-    typed(type, json())
-
-data class TaiPanGameState(
-    val playersToPlay: List<String>,
-    val cards: List<Card>,
-    val numberOfCardsPerPlayer: Map<String, Int>,
-    val taiPannedPlayers: Map<String, String>,
-    val cardsInGame: List<Card>,
-    val score: Map<String, Int>,
-    val roundIndex: Int?,
-    val trickIndex: Int?,
-)
-
-private fun parseGameState(state: Json?) =
-    TaiPanGameState(
-        (state?.get("playersToPlay") as? Array<String> ?: emptyArray()).toList(),
-        (state?.get("cards") as? Array<Array<Card>> ?: emptyArray()).map { it[1] },
-        state?.get("numberOfCardsPerPlayer") as? Map<String, Int> ?: emptyMap(),
-        state?.get("taiPannedPlayers") as? Map<String, String> ?: emptyMap(),
-        (state?.get("cardsInGame") as? Array<Array<Card>> ?: emptyArray()).map { it[1] },
-        state?.get("score") as? Map<String, Int> ?: emptyMap(),
-        state?.get("roundIndex") as? Int?,
-        state?.get("trickIndex") as? Int?,
-    )
-
-
 val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
-    val gameState = parseGameState(props.gameState)
+    val gameState = props.gameState?.let { serializer.decodeFromString(TaiPanPlayerState.serializer(), it) }
     val dispatchAction = props.dispatchAction
 
     val (selectedCards, setSelectedCards) = useState(emptySet<Card>())
-    val (dragonPass, setDragonPass) = useState("LEFT")
-    val (exchangeCards, setExchangeCards) = useState(ExchangeCards(null, null, null))
+    val (dragonPass, setDragonPass) = useState<DragonPass?>(null)
+    val (exchangeCards, setExchangeCards) = useState<Triple<Card?, Card?, Card?>>(Triple(null, null, null))
 
     console.info(gameState, selectedCards.joinToString(", "))
 
     val callTaiPan = {
-        dispatchAction(typed("nl.hiddewieringa.game.taipan.CallTaiPan"))
+        dispatchAction(serializer.encodeToString(CallTaiPan.serializer(), CallTaiPan))
     }
 
     val fold = {
-        dispatchAction(typed("nl.hiddewieringa.game.taipan.Fold"))
+        dispatchAction(serializer.encodeToString(Fold.serializer(), Fold))
     }
 
     val requestNextCards = {
-        dispatchAction(typed("nl.hiddewieringa.game.taipan.RequestNextCards"))
+        dispatchAction(serializer.encodeToString(RequestNextCards.serializer(), RequestNextCards))
     }
 
     val passDragonTrick = {
-        dispatchAction(typed("nl.hiddewieringa.game.taipan.PassDragonTrick", json("dragonPass" to dragonPass)))
+        if (dragonPass != null) {
+            dispatchAction(serializer.encodeToString(PassDragonTrick.serializer(), PassDragonTrick(dragonPass)))
+        } else {
+            // TODO
+            console.error("Not implemented")
+        }
     }
 
     val playCards = {
-        // TODO check if any cards selected
-        // TODO gather addons
-        val addons = emptyArray<Any?>()
-        dispatchAction(typed("nl.hiddewieringa.game.taipan.PlayCards", json("cards" to arrayOf("java.util.Set", selectedCards.toTypedArray()), "addons" to arrayOf("java.util.Set", addons))))
+        if (selectedCards.isNotEmpty()) {
+            // TODO gather addons
+            val addons = emptySet<PlayCardsAddon>()
+
+            dispatchAction(serializer.encodeToString(PlayCards.serializer(), PlayCards(selectedCards, addons)))
+        } else {
+            // TODO
+            console.error("Not implemented")
+        }
     }
 
     val passCards = {
-        // TODO check if exchange not empty
-        dispatchAction(typed("nl.hiddewieringa.game.taipan.CardPass", json("cardPass" to json("left" to exchangeCards.left, "forward" to exchangeCards.forward, "right" to exchangeCards.right))))
+        val (left, forward, right) = exchangeCards
+        if (left != null && forward != null && right != null) {
+            dispatchAction(serializer.encodeToString(CardPass.serializer(), CardPass(ThreeWayPass(left, forward, right))))
+        } else {
+            // TODO
+            console.error("Not implemented")
+        }
     }
 
     val selectedCard = { card: Card ->
         setSelectedCards(selectedCards.plusElement(card))
     }
     val deselectedCard = { card: Card ->
-        setSelectedCards(selectedCards.filterNot { it.__type == card.__type && it.value == card.value && it.suit == card.suit }.toSet())
+        setSelectedCards(selectedCards.filter { it != card }.toSet())
     }
 
-    val playerId = gameState.playersToPlay
+    val playerId = gameState?.playersToPlay ?: emptyList()
 
     div {
         +"Players to play ${playerId.joinToString(", ")}"
 
         ul {
-            val cards = gameState.cards
+            val cards = gameState?.cards ?: emptyList()
             cards.map { card ->
                 li {
                     input {
@@ -128,38 +102,41 @@ val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
                         }
                     }
 
-                    +card.__type
-                    +(card.value?.toString() ?: "no value")
-                    +(card.suit ?: "no suit")
-                    +card.points.toString()
+                    if (card is NumberedCard) {
+                        +card.toString()
+                        +"$card: ${card.suit} ${card.value}"
+                    }
+                    +" ${card.points}"
+
+                    val uniqueString = "${card::class.simpleName}${if (card is NumberedCard) card.suit else null}${if (card is NumberedCard) card.value else null}"
 
                     label {
-                        attrs.htmlFor = "exchangeLeft${card.__type}${card.suit}${card.value}"
+                        attrs.htmlFor = "exchangeLeft$uniqueString"
                         input {
-                            attrs.id = "exchangeLeft${card.__type}${card.suit}${card.value}"
+                            attrs.id = "exchangeLeft$uniqueString"
                             attrs.type = InputType.radio
                             attrs.name = "exchangeLeft"
-                            attrs.onChangeFunction = { setExchangeCards(ExchangeCards(card, exchangeCards.forward, exchangeCards.right)) }
+                            attrs.onChangeFunction = { setExchangeCards(Triple(card, exchangeCards.second, exchangeCards.third)) }
                         }
                         +"exchange left"
                     }
                     label {
-                        attrs.htmlFor = "exchangeForward${card.__type}${card.suit}${card.value}"
+                        attrs.htmlFor = "exchangeForward$uniqueString"
                         input {
-                            attrs.id = "exchangeForward${card.__type}${card.suit}${card.value}"
+                            attrs.id = "exchangeForward$uniqueString"
                             attrs.type = InputType.radio
                             attrs.name = "exchangeForward"
-                            attrs.onChangeFunction = { setExchangeCards(ExchangeCards(exchangeCards.left, card, exchangeCards.right)) }
+                            attrs.onChangeFunction = { setExchangeCards(Triple(exchangeCards.first, card, exchangeCards.third)) }
                         }
                         +"exchange forward"
                     }
                     label {
-                        attrs.htmlFor = "exchangeRight${card.__type}${card.suit}${card.value}"
+                        attrs.htmlFor = "exchangeRight$uniqueString"
                         input {
-                            attrs.id = "exchangeRight${card.__type}${card.suit}${card.value}"
+                            attrs.id = "exchangeRight$uniqueString"
                             attrs.type = InputType.radio
                             attrs.name = "exchangeRight"
-                            attrs.onChangeFunction = { setExchangeCards(ExchangeCards(exchangeCards.left, exchangeCards.forward, card)) }
+                            attrs.onChangeFunction = { setExchangeCards(Triple(exchangeCards.first, exchangeCards.second, card)) }
                         }
                         +"exchange right"
                     }
@@ -170,21 +147,18 @@ val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
         p {
             +"Dragon pass"
 
-            arrayOf(
-                "LEFT",
-                "RIGHT"
-            ).map { dragonPassValue ->
+            DragonPass.values().map { dragonPassValue ->
                 label {
-                    attrs.htmlFor = dragonPassValue
+                    attrs.htmlFor = dragonPassValue.toString()
                     input {
-                        attrs.id = dragonPassValue
+                        attrs.id = dragonPassValue.toString()
                         attrs.type = InputType.radio
                         attrs.name = "dragonPassValue"
                         attrs.onChangeFunction = {
                             setDragonPass(dragonPassValue)
                         }
                     }
-                    +dragonPassValue
+                    +dragonPassValue.toString()
                 }
             }
         }

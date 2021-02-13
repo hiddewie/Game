@@ -21,7 +21,8 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":common"))
+    implementation(project(":taipan"))
+    implementation(project(":tictactoe"))
 
     implementation(kotlin("stdlib-js"))
 

@@ -2,6 +2,12 @@ package nl.hiddewieringa.game.frontend.games
 
 import kotlinx.css.*
 import kotlinx.html.js.onClickFunction
+import nl.hiddewieringa.game.frontend.serializer
+import nl.hiddewieringa.game.tictactoe.Cross
+import nl.hiddewieringa.game.tictactoe.GameMark
+import nl.hiddewieringa.game.tictactoe.Location
+import nl.hiddewieringa.game.tictactoe.PlaceMarkLocation
+import nl.hiddewieringa.game.tictactoe.state.TicTacToePlayerState
 import react.RProps
 import react.dom.div
 import react.dom.key
@@ -12,36 +18,30 @@ import styled.css
 import styled.styledP
 import styled.styledTable
 import styled.styledTd
-import kotlin.js.Json
-import kotlin.js.json
 
 external interface TicTacToeProps : RProps {
-    var gameState: Json?
-    var dispatchAction: (event: Json) -> Unit
+    var gameState: String? // Json string
+    var dispatchAction: (event: String) -> Unit // Json encoded action
     var playerId: String?
 }
 
-val emptyBoard = arrayOf(arrayOf<Json?>(null, null, null), arrayOf<Json?>(null, null, null), arrayOf<Json?>(null, null, null))
+val emptyBoard = arrayOf(arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null))
 
 val TicTacToeComponent = functionalComponent<TicTacToeProps> { props ->
+    val gameState = props.gameState?.let { serializer.decodeFromString(TicTacToePlayerState.serializer(), it) }
 
-    val playerToPlay: String? = props.gameState?.get("playerToPlay") as String?
-    val board: Array<Array<Json?>> = props.gameState?.get("board") as Array<Array<Json?>>? ?: emptyBoard
-    val playerWon: String? = props.gameState?.get("playerWon") as String?
-    val gameFinished: Boolean = props.gameState?.get("gameFinished") as Boolean? ?: false
+    val playerToPlay = gameState?.playerToPlay
+    val board = gameState?.board ?: emptyBoard
+    val playerWon = gameState?.playerWon
+    val gameFinished = gameState?.gameFinished ?: false
 
     val dispatchAction = props.dispatchAction
     val playerId = props.playerId
 
     val play = { x: Int, y: Int ->
         console.info("play", x, y)
-        dispatchAction(json(
-            "__type" to "nl.hiddewieringa.game.tictactoe.PlaceMarkLocation",
-            "location" to json(
-                "x" to x,
-                "y" to y
-            )
-        ))
+        val action = PlaceMarkLocation(Location(x, y))
+        dispatchAction(serializer.encodeToString(PlaceMarkLocation.serializer(), action))
     }
 
     div {
@@ -51,13 +51,13 @@ val TicTacToeComponent = functionalComponent<TicTacToeProps> { props ->
             }
 
             if (playerWon != null) {
-                if (playerWon == playerId) {
+                if (playerWon.toString() == playerId) {
                     +"You won!"
                 } else {
                     +"$playerWon won!"
                 }
             } else if (playerToPlay != null) {
-                if (playerToPlay == playerId) {
+                if (playerToPlay.toString() == playerId) {
                     +"You play!"
                 } else {
                     +"Current player: $playerToPlay"
@@ -93,7 +93,7 @@ val TicTacToeComponent = functionalComponent<TicTacToeProps> { props ->
 
                                     +when {
                                         board[x][y] == null -> ""
-                                        board[x][y]!!["__type"] == "nl.hiddewieringa.game.tictactoe.Cross" -> "×"
+                                        board[x][y] is Cross -> "×"
                                         else -> "⊙"
                                     }
                                 }

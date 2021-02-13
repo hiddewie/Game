@@ -26,6 +26,7 @@ kotlin {
                 // Testing
                 implementation(kotlin("test-common"))
                 implementation(kotlin("test-annotations-common"))
+                implementation(project(":test-support"))
             }
         }
 
@@ -33,6 +34,8 @@ kotlin {
             dependencies {
                 // Testing
                 implementation(kotlin("test-junit"))
+                implementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine")
             }
         }
 
