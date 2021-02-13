@@ -1,4 +1,4 @@
 plugins {
-    id("kotlin-jvm-library")
+    id("kotlin-multiplatform-library")
     kotlin("plugin.serialization") version "1.4.21"
 }

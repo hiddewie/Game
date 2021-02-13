@@ -97,6 +97,7 @@ class GameInstanceProvider(
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
+        // TODO use bean defined scope
         GlobalScope.async(threadPoolDispatcher) {
             val gameResult = startedJob.await()
 

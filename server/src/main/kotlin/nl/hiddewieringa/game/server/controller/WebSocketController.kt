@@ -73,7 +73,7 @@ class WebSocketController(
     private fun <A : PlayerActions, E : Event, S : Any, PID : PlayerId> handle(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<A, E, S, PID>, playerSlot: PlayerSlot<A, E, S, PID>): Mono<Void> {
         playerSlot.increaseReference()
 
-        // TODO: other scope?
+        // TODO: other scope? create our own scope that is coupled with bean lifetime
         GlobalScope.launch {
             session.receive()
                 // Messages must be retained to make Netty not lose it due to 0 message reference count

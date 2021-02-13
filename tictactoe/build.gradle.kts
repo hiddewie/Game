@@ -1,8 +1,14 @@
 plugins {
-    id("kotlin-jvm-library")
+    id("kotlin-multiplatform-library")
     kotlin("plugin.serialization") version "1.4.21"
 }
 
-dependencies {
-    implementation(project(":core"))
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation(project(":core"))
+            }
+        }
+    }
 }

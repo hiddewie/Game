@@ -8,10 +8,30 @@ repositories {
 }
 
 kotlin {
-    jvm()
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs = freeCompilerArgs + listOf(
+                    "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
+                )
+            }
+        }
+    }
+    jvm().compilations.all {
+        kotlinOptions {
+            jvmTarget = "11"
+        }
+    }
     js(IR) {
         browser {
-            binaries.executable()
+            browser {
+                testTask {
+                    useKarma {
+                        useFirefox()
+                    }
+                }
+            }
         }
+        binaries.executable()
     }
 }
