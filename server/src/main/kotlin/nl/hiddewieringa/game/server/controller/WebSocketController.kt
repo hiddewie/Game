@@ -45,9 +45,7 @@ class WebSocketController(
 
     private val template = UriTemplate(URI_TEMPLATE)
 
-    private val serializer = Json {
-//        classDiscriminator = "__type" // TODO #type, or the default?
-    }
+    private val serializer = Json {}
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val path = session.handshakeInfo.uri.path
@@ -97,7 +95,7 @@ class WebSocketController(
         textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(data, state, playerId)))
 
     // TODO add exception handling and send message when something is wrong with the payload.
-    private fun <A : PlayerActions> readAction(message: WebSocketMessage, actionSerializer: KSerializer<A>): A =
+    private fun <A : PlayerActions> readAction(message: WebSocketMessage, actionSerializer: KSerializer<A>) =
         serializer.decodeFromString(WrappedAction.serializer(actionSerializer), message.payloadAsText).action
 
     private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.stateMessage(state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<E, S, PID>>) =

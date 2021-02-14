@@ -4,26 +4,19 @@ import kotlinx.html.InputType
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
-import nl.hiddewieringa.game.frontend.serializer
+import nl.hiddewieringa.game.frontend.GameUiProps
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.Card
 import nl.hiddewieringa.game.taipan.card.NumberedCard
 import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import org.w3c.dom.HTMLInputElement
-import react.RProps
 import react.dom.*
 import react.functionalComponent
 import react.useState
 
-external interface TaiPanProps : RProps {
-    var gameState: String? // Json string
-    var dispatchAction: (event: String) -> Unit // Json encoded action
-    var playerId: String?
-}
-
-val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
-    val gameState = props.gameState?.let { serializer.decodeFromString(TaiPanPlayerState.serializer(), it) }
+val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanPlayerActions>> { props ->
+    val gameState = props.gameState
     val dispatchAction = props.dispatchAction
 
     val (selectedCards, setSelectedCards) = useState(emptySet<Card>())
@@ -33,20 +26,20 @@ val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
     console.info(gameState, selectedCards.joinToString(", "))
 
     val callTaiPan = {
-        dispatchAction(serializer.encodeToString(CallTaiPan.serializer(), CallTaiPan))
+        dispatchAction.dispatch(CallTaiPan)
     }
 
     val fold = {
-        dispatchAction(serializer.encodeToString(Fold.serializer(), Fold))
+        dispatchAction.dispatch(Fold)
     }
 
     val requestNextCards = {
-        dispatchAction(serializer.encodeToString(RequestNextCards.serializer(), RequestNextCards))
+        dispatchAction.dispatch(RequestNextCards)
     }
 
     val passDragonTrick = {
         if (dragonPass != null) {
-            dispatchAction(serializer.encodeToString(PassDragonTrick.serializer(), PassDragonTrick(dragonPass)))
+            dispatchAction.dispatch(PassDragonTrick(dragonPass))
         } else {
             // TODO
             console.error("Not implemented")
@@ -58,7 +51,7 @@ val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
             // TODO gather addons
             val addons = emptySet<PlayCardsAddon>()
 
-            dispatchAction(serializer.encodeToString(PlayCards.serializer(), PlayCards(selectedCards, addons)))
+            dispatchAction.dispatch(PlayCards(selectedCards, addons))
         } else {
             // TODO
             console.error("Not implemented")
@@ -68,7 +61,7 @@ val TaiPanComponent = functionalComponent<TaiPanProps> { props ->
     val passCards = {
         val (left, forward, right) = exchangeCards
         if (left != null && forward != null && right != null) {
-            dispatchAction(serializer.encodeToString(CardPass.serializer(), CardPass(ThreeWayPass(left, forward, right))))
+            dispatchAction.dispatch(CardPass(ThreeWayPass(left, forward, right)))
         } else {
             // TODO
             console.error("Not implemented")

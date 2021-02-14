@@ -2,13 +2,9 @@ package nl.hiddewieringa.game.frontend.games
 
 import kotlinx.css.*
 import kotlinx.html.js.onClickFunction
-import nl.hiddewieringa.game.frontend.serializer
-import nl.hiddewieringa.game.tictactoe.Cross
-import nl.hiddewieringa.game.tictactoe.GameMark
-import nl.hiddewieringa.game.tictactoe.Location
-import nl.hiddewieringa.game.tictactoe.PlaceMarkLocation
+import nl.hiddewieringa.game.frontend.GameUiProps
+import nl.hiddewieringa.game.tictactoe.*
 import nl.hiddewieringa.game.tictactoe.state.TicTacToePlayerState
-import react.RProps
 import react.dom.div
 import react.dom.key
 import react.dom.tbody
@@ -19,16 +15,10 @@ import styled.styledP
 import styled.styledTable
 import styled.styledTd
 
-external interface TicTacToeProps : RProps {
-    var gameState: String? // Json string
-    var dispatchAction: (event: String) -> Unit // Json encoded action
-    var playerId: String?
-}
-
 val emptyBoard = arrayOf(arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null))
 
-val TicTacToeComponent = functionalComponent<TicTacToeProps> { props ->
-    val gameState = props.gameState?.let { serializer.decodeFromString(TicTacToePlayerState.serializer(), it) }
+val TicTacToeComponent = functionalComponent<GameUiProps<TicTacToePlayerState, TicTacToePlayerActions>> { props ->
+    val gameState = props.gameState
 
     val playerToPlay = gameState?.playerToPlay
     val board = gameState?.board ?: emptyBoard
@@ -41,7 +31,7 @@ val TicTacToeComponent = functionalComponent<TicTacToeProps> { props ->
     val play = { x: Int, y: Int ->
         console.info("play", x, y)
         val action = PlaceMarkLocation(Location(x, y))
-        dispatchAction(serializer.encodeToString(PlaceMarkLocation.serializer(), action))
+        dispatchAction.dispatch(action)
     }
 
     div {

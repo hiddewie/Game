@@ -9,8 +9,16 @@ import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import nl.hiddewieringa.game.core.Event
+import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.frontend.games.TaiPanComponent
 import nl.hiddewieringa.game.frontend.games.TicTacToeComponent
+import nl.hiddewieringa.game.taipan.TaiPanEvent
+import nl.hiddewieringa.game.taipan.TaiPanPlayerActions
+import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
+import nl.hiddewieringa.game.tictactoe.TicTacToeEvent
+import nl.hiddewieringa.game.tictactoe.TicTacToePlayerActions
+import nl.hiddewieringa.game.tictactoe.state.TicTacToePlayerState
 import org.w3c.dom.WebSocket
 import org.w3c.fetch.RequestInit
 import react.*
@@ -19,7 +27,6 @@ import react.router.dom.hashRouter
 import react.router.dom.route
 import react.router.dom.routeLink
 import react.router.dom.switch
-import kotlin.js.json
 
 // TODO remove, include from the common compiled models
 external interface GameDetails {
@@ -195,20 +202,29 @@ external interface GamePlay : GameSlug {
     val playerSlotId: String
 }
 
-val serializer = Json {  }
+val serializer = Json {}
 
-// TODO add generics for game
 @Serializable
-class StateEvent(
-    val event: String?,
-    val state: String?,
+class StateEvent<E : Event?, S : Any>(
+    val event: E?,
+    val state: S,
     val playerId: String?,
 )
 
 @Serializable
-class PublishedAction(
-    val action: String,
+class PublishedAction<A : PlayerActions>(
+    val action: A,
 )
+
+external interface DispatchAction<A : PlayerActions> {
+    fun dispatch(action: A)
+}
+
+external interface GameUiProps<S : Any, A : PlayerActions> : RProps {
+    var gameState: S?
+    var dispatchAction: DispatchAction<A>
+    var playerId: String?
+}
 
 val PlayComponent = functionalComponent<GamePlay> { params ->
     val gameSlug = params.gameSlug
@@ -216,10 +232,21 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     val playerSlotId = params.playerSlotId
 
     val (connected, setConnected) = useState(false)
-    val (gameState, setGameState) = useState<String?>(null)
+    val (gameState, setGameState) = useState<Any?>(null)
     val (playerId, setPlayerId) = useState<String?>(null)
 
     val webSocket = useRef<WebSocket?>(null)
+
+    val eventSerializer = when (gameSlug) {
+        "tic-tac-toe" -> TicTacToeEvent.serializer()
+        "tai-pan" -> TaiPanEvent.serializer()
+        else -> throw IllegalStateException("Unknown game slug $gameSlug")
+    }
+    val stateSerializer = when (gameSlug) {
+        "tic-tac-toe" -> TicTacToePlayerState.serializer()
+        "tai-pan" -> TaiPanPlayerState.serializer()
+        else -> throw IllegalStateException("Unknown game slug $gameSlug")
+    }
 
     useEffectWithCleanup(listOf(instanceId, playerSlotId)) {
         val socket = WebSocket("ws://localhost:8081/interaction/$instanceId/$playerSlotId")
@@ -232,8 +259,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
             setConnected(false)
         }
         socket.onmessage = {
-            val stateEvent = serializer.decodeFromString(StateEvent.serializer(), it.data.unsafeCast<String>())
-//            val stateEvent = JSON.parse<StateEvent>(it.data.unsafeCast<String>())
+            val stateEvent = serializer.decodeFromString(StateEvent.serializer(eventSerializer, stateSerializer), it.data.unsafeCast<String>())
             console.info("message", it.data, "event", stateEvent.event, "state", stateEvent.state, "player", stateEvent.playerId)
             setGameState(stateEvent.state)
             setPlayerId(stateEvent.playerId)
@@ -253,14 +279,12 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         }
     }
 
-    val dispatchAction = { action: String ->
+    fun websocketDispatchAction(action: String) { // Serialized
         console.info("action", action)
-        webSocket.current?.send(serializer.encodeToString(PublishedAction.serializer(), PublishedAction(action)))
-        Unit
+        webSocket.current?.send(action)
     }
 
     div {
-
         div("uk-margin uk-flex") {
             ul("uk-breadcrumb uk-flex-auto") {
                 routeLink("") {
@@ -290,14 +314,25 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         when (gameSlug) {
             "tic-tac-toe" -> {
                 child(TicTacToeComponent) {
-                    attrs.dispatchAction = dispatchAction
-                    attrs.gameState = gameState
+                    attrs.dispatchAction = object : DispatchAction<TicTacToePlayerActions> {
+                        override fun dispatch(action: TicTacToePlayerActions) {
+                            val serialized = serializer.encodeToString(PublishedAction.serializer(TicTacToePlayerActions.serializer()), PublishedAction(action))
+                            websocketDispatchAction(serialized)
+                        }
+                    }
+                    attrs.gameState = gameState as TicTacToePlayerState?
                     attrs.playerId = playerId
                 }
             }
             "tai-pan" -> child(TaiPanComponent) {
-                attrs.dispatchAction = dispatchAction
-                attrs.gameState = gameState
+                attrs.dispatchAction = object : DispatchAction<TaiPanPlayerActions> {
+                    override fun dispatch(action: TaiPanPlayerActions) {
+                        val serialized = serializer.encodeToString(PublishedAction.serializer(TaiPanPlayerActions.serializer()), PublishedAction(action))
+                        websocketDispatchAction(serialized)
+                        webSocket.current?.send(serialized)
+                    }
+                }
+                attrs.gameState = gameState as TaiPanPlayerState?
                 attrs.playerId = playerId
             }
             else -> {

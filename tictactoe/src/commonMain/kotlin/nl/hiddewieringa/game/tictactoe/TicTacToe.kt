@@ -120,15 +120,19 @@ object Cross : GameMark()
 
 @Serializable
 object Circle : GameMark()
+
 @Serializable
 data class Location(val x: Int, val y: Int)
 
 @Serializable
 sealed class TicTacToeEvent : Event
+
 @Serializable
 data class PlayerPlacedMark(val player: TwoPlayerId, val mark: GameMark, val location: Location) : TicTacToeEvent()
+
 @Serializable
 object IllegalMove : TicTacToeEvent()
+
 @Serializable
 data class GameEnded(val playerWon: TwoPlayerId?) : TicTacToeEvent()
 
@@ -136,6 +140,7 @@ object TicTacToeGameParameters : GameParameters
 
 @Serializable
 sealed class TicTacToePlayerActions : PlayerActions
+
 @Serializable
 data class PlaceMarkLocation(val location: Location) : TicTacToePlayerActions()
 
