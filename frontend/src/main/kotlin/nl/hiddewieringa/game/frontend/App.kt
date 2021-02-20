@@ -329,7 +329,6 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
                     override fun dispatch(action: TaiPanPlayerActions) {
                         val serialized = serializer.encodeToString(PublishedAction.serializer(TaiPanPlayerActions.serializer()), PublishedAction(action))
                         websocketDispatchAction(serialized)
-                        webSocket.current?.send(serialized)
                     }
                 }
                 attrs.gameState = gameState as TaiPanPlayerState?

@@ -73,5 +73,11 @@ interface TeamId
 @Serializable
 enum class TwoTeamTeamId : TeamId {
     TEAM1,
-    TEAM2
+    TEAM2;
+
+    fun otherTeam() =
+        when (this) {
+            TEAM1 -> TEAM2
+            TEAM2 -> TEAM1
+        }
 }

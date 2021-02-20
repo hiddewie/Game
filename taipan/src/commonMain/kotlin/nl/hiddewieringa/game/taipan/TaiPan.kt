@@ -7,7 +7,7 @@ import kotlin.random.Random
 
 sealed class TaiPanState : GameState<TaiPanState>
 
-private fun nextPlayer(playerId: TwoTeamPlayerId): TwoTeamPlayerId =
+fun nextPlayer(playerId: TwoTeamPlayerId): TwoTeamPlayerId =
     when (playerId) {
         TwoTeamPlayerId.PLAYER1 -> TwoTeamPlayerId.PLAYER2
         TwoTeamPlayerId.PLAYER2 -> TwoTeamPlayerId.PLAYER3

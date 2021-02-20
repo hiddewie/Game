@@ -4,71 +4,88 @@ import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.core.TwoTeamTeamId
 import nl.hiddewieringa.game.taipan.*
-import nl.hiddewieringa.game.taipan.card.Card
-import nl.hiddewieringa.game.taipan.card.fullDeck
+import nl.hiddewieringa.game.taipan.card.CardSet
 
 @Serializable
 data class TaiPanPlayerState(
     val playersToPlay: List<TwoTeamPlayerId>,
-    val cards: List<Card>, // TODO sort
+    val cards: CardSet,
     val numberOfCardsPerPlayer: Map<TwoTeamPlayerId, Int>,
     val taiPannedPlayers: Map<TwoTeamPlayerId, TaiPanStatus>,
-    val cardsInGame: List<Card>, // TODO sort
+    val playedCards: CardSet,
     val points: Map<TwoTeamTeamId, Int>,
+    val trickCards: CardSet,
+    val roundCards: Map<TwoTeamPlayerId, CardSet>,
     val roundIndex: Int?,
     val trickIndex: Int?,
+    val outOfCardOrder: List<TwoTeamPlayerId>,
 )
 
 fun TaiPanState.toPlayerState(playerId: TwoTeamPlayerId): TaiPanPlayerState =
     when (this) {
         is TaiPan -> TaiPanPlayerState(
-            emptyList(),
-            playerCards.getValue(playerId).toList(),
+            TwoTeamPlayerId.values().filter { playerCards.getValue(it).size < 14 },
+            playerCards.getValue(playerId),
             playerCards.map { (key, value) -> key to value.size }.toMap(),
             taiPannedPlayers,
-            (fullDeck.toSet() - playerCards.flatMap { it.value }.toSet()).toList(),
+            emptySet(),
             points,
+            emptySet(),
+            emptyMap(),
             null,
-            null
+            null,
+            emptyList(),
         )
         is TaiPanPassCards -> TaiPanPlayerState(
             TwoTeamPlayerId.values().filterNot(passedCards::containsKey),
-            playerCards.getValue(playerId).toList(),
+            playerCards.getValue(playerId),
             playerCards.map { (key, value) -> key to value.size }.toMap(),
             taiPannedPlayers,
-            (fullDeck.toSet() - playerCards.flatMap { it.value }.toSet()).toList(),
+            emptySet(),
             points,
+            emptySet(),
+            emptyMap(),
             null,
-            null
+            null,
+            emptyList(),
         )
         is TaiPanPlayTrick -> TaiPanPlayerState(
             listOf(currentPlayer),
-            playerCards.getValue(playerId).toList(),
+            playerCards.getValue(playerId),
             playerCards.map { (key, value) -> key to value.size }.toMap(),
             taiPannedPlayers,
-            (fullDeck.toSet() - playerCards.flatMap { it.value }.toSet()).toList(),
+            roundCards.flatMapTo(mutableSetOf()) { it.value } + trickCards,
             points,
+            trickCards,
+            roundCards,
             roundIndex,
-            trickIndex
+            trickIndex,
+            outOfCardOrder,
         )
         is TaiPanDragonPass -> TaiPanPlayerState(
             listOf(trick.currentPlayer),
-            trick.playerCards.getValue(playerId).toList(),
+            trick.playerCards.getValue(playerId),
             trick.playerCards.map { (key, value) -> key to value.size }.toMap(),
             trick.taiPannedPlayers,
-            (fullDeck.toSet() - trick.playerCards.flatMap { it.value }.toSet()).toList(),
+            trick.roundCards.flatMapTo(mutableSetOf()) { it.value } + trick.trickCards,
             trick.points,
+            trick.trickCards,
+            trick.roundCards,
             trick.roundIndex,
-            trick.trickIndex
+            trick.trickIndex,
+            trick.outOfCardOrder
         )
         is TaiPanFinalScore -> TaiPanPlayerState(
             emptyList(),
-            emptyList(),
+            emptySet(),
             emptyMap(),
             emptyMap(),
-            emptyList(),
+            emptySet(),
             points,
+            emptySet(),
+            emptyMap(),
             null,
-            null
+            null,
+            emptyList(),
         )
     }

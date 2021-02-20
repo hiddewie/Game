@@ -84,6 +84,7 @@ class WebSocketController(
 
         // The initial state is published directly
         val initialStateFlux = Flux.just(session.stateMessage(gameInstance.playerState(playerSlotId), playerSlot.playerId, wrappedEventSerializer))
+        // TODO modify events to be player specific, cleaned of information not destined for a player
         val events = playerSlot.receiveChannel.receiveAsFlow().asFlux()
             .map { (event, state) -> session.eventMessage(event, state, playerSlot.playerId, wrappedEventSerializer) }
 

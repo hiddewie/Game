@@ -18,7 +18,7 @@ fun main() {
             }
         }
 
-        div("uk-container") {
+        div("uk-container uk-container-expand") {
             child(AppComponent)
         }
     }

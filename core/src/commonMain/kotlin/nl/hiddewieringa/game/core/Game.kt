@@ -25,6 +25,8 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
             println("Game loop: state $state")
             when (val currentState = state) {
 
+                // TODO persist game events
+
                 // Intermediate branch
                 is IntermediateGameState<*, *, *, *> ->
                     if (currentState.hasDecision()) {
