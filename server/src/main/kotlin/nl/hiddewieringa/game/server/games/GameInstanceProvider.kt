@@ -31,6 +31,7 @@ class PlayerSlot<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     }
 }
 
+// TODO store start timestamp
 class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val id: UUID,
     val gameSlug: String,

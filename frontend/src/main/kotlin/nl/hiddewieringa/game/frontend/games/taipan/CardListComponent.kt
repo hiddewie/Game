@@ -2,6 +2,7 @@ package nl.hiddewieringa.game.frontend.games.taipan
 
 import kotlinx.css.*
 import nl.hiddewieringa.game.taipan.card.Card
+import react.RBuilder
 import react.RProps
 import react.child
 import react.dom.div
@@ -12,7 +13,7 @@ import kotlin.Float
 
 external interface CardListProps : RProps {
     var cards: Iterable<Card>
-    var showHover: Boolean
+    var hoverControls: ((Card) -> (RBuilder) -> Unit)?
 }
 
 val cardListRuleSet: (Float, Boolean) -> RuleSet = { index, large ->
@@ -38,10 +39,10 @@ val CardListComponent = functionalComponent<CardListProps> { props ->
         css {
 //            justify-content: space-between;
 
-            display = Display.flex
-            justifyContent = JustifyContent.spaceBetween
-            put("flex-flow", "wrap")
-            paddingRight = 45.px
+            display = Display.inlineFlex
+            justifyContent = JustifyContent.center
+//            put("flex-flow", "wrap")
+//            paddingRight = 45.px
         }
 
         cards.mapIndexed { index, card ->
@@ -51,7 +52,7 @@ val CardListComponent = functionalComponent<CardListProps> { props ->
             child(CardComponent) {
                 attrs.card = card
                 attrs.small = false
-                attrs.showHover = props.showHover
+                attrs.hoverControls = props.hoverControls?.let { controls -> controls(card) }
             }
 //            }
         }
@@ -72,9 +73,10 @@ val EmptyCardListComponent = functionalComponent<EmptyCardListProps> { props ->
 
     styledDiv {
         css {
-            display = Display.flex
+            display = Display.inlineFlex
+//            justifyContent = JustifyContent.spaceBetween
             put("flex-flow", "wrap")
-            paddingRight = 30.px
+//            paddingRight = 30.px
         }
 
         repeat(count) { index ->
@@ -83,7 +85,7 @@ val EmptyCardListComponent = functionalComponent<EmptyCardListProps> { props ->
 //                css(cardListRuleSet(indexFromMiddle, index == count - 1))
             child(EmptyCardComponent) {
                 attrs.small = true
-                attrs.showHover = false
+                attrs.hoverControls = attrs.hoverControls
 
                 if (index == count - 1) {
                     attrs.content = count.toString()

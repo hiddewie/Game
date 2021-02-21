@@ -176,6 +176,7 @@ internal fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: 
     }
 }
 
+// TODO rename tai pan receive cards
 data class TaiPan(
     private val parameters: TaiPanGameParameters,
     val points: Map<TwoTeamTeamId, Int>,
@@ -262,7 +263,7 @@ data class TaiPan(
                 when {
                     taiPannedPlayers.containsKey(playerId) ->
                         IllegalAction("Already tai panned", action)
-                    playerCards.size < 14 ->
+                    playerCards.getValue(playerId).size < 14 ->
                         PlayerTaiPanned(playerId, TaiPanStatus.GREAT)
                     else ->
                         PlayerTaiPanned(playerId, TaiPanStatus.NORMAL)
@@ -296,6 +297,7 @@ data class TaiPan(
         )
 }
 
+// TODO rename exchange
 data class TaiPanPassCards(
     private val parameters: TaiPanGameParameters,
     val points: Map<TwoTeamTeamId, Int>,
@@ -633,6 +635,7 @@ data class TaiPanPlayTrick(
         )
 }
 
+// TODO implement automatic dragon pass in case of no difference
 data class TaiPanDragonPass(
     val trick: TaiPanPlayTrick,
 ) : TaiPanState(), IntermediateGameState<TwoTeamPlayerId, TaiPanPlayerActions, TaiPanEvent, TaiPanState> {

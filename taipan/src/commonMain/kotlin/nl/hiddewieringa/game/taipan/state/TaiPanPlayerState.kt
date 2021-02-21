@@ -6,8 +6,17 @@ import nl.hiddewieringa.game.core.TwoTeamTeamId
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.CardSet
 
+enum class TaiPanPlayerStateType {
+    RECEIVE_CARDS,
+    EXCHANGE_CARDS,
+    PLAY,
+    PASS_DRAGON,
+    GAME_FINISHED
+}
+
 @Serializable
 data class TaiPanPlayerState(
+    val stateType: TaiPanPlayerStateType,
     val playersToPlay: List<TwoTeamPlayerId>,
     val cards: CardSet,
     val numberOfCardsPerPlayer: Map<TwoTeamPlayerId, Int>,
@@ -24,6 +33,7 @@ data class TaiPanPlayerState(
 fun TaiPanState.toPlayerState(playerId: TwoTeamPlayerId): TaiPanPlayerState =
     when (this) {
         is TaiPan -> TaiPanPlayerState(
+            TaiPanPlayerStateType.RECEIVE_CARDS,
             TwoTeamPlayerId.values().filter { playerCards.getValue(it).size < 14 },
             playerCards.getValue(playerId),
             playerCards.map { (key, value) -> key to value.size }.toMap(),
@@ -37,6 +47,7 @@ fun TaiPanState.toPlayerState(playerId: TwoTeamPlayerId): TaiPanPlayerState =
             emptyList(),
         )
         is TaiPanPassCards -> TaiPanPlayerState(
+            TaiPanPlayerStateType.EXCHANGE_CARDS,
             TwoTeamPlayerId.values().filterNot(passedCards::containsKey),
             playerCards.getValue(playerId),
             playerCards.map { (key, value) -> key to value.size }.toMap(),
@@ -50,6 +61,7 @@ fun TaiPanState.toPlayerState(playerId: TwoTeamPlayerId): TaiPanPlayerState =
             emptyList(),
         )
         is TaiPanPlayTrick -> TaiPanPlayerState(
+            TaiPanPlayerStateType.PLAY,
             listOf(currentPlayer),
             playerCards.getValue(playerId),
             playerCards.map { (key, value) -> key to value.size }.toMap(),
@@ -63,6 +75,7 @@ fun TaiPanState.toPlayerState(playerId: TwoTeamPlayerId): TaiPanPlayerState =
             outOfCardOrder,
         )
         is TaiPanDragonPass -> TaiPanPlayerState(
+            TaiPanPlayerStateType.PASS_DRAGON,
             listOf(trick.currentPlayer),
             trick.playerCards.getValue(playerId),
             trick.playerCards.map { (key, value) -> key to value.size }.toMap(),
@@ -76,6 +89,7 @@ fun TaiPanState.toPlayerState(playerId: TwoTeamPlayerId): TaiPanPlayerState =
             trick.outOfCardOrder
         )
         is TaiPanFinalScore -> TaiPanPlayerState(
+            TaiPanPlayerStateType.GAME_FINISHED,
             emptyList(),
             emptySet(),
             emptyMap(),

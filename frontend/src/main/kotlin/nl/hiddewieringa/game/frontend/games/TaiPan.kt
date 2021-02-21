@@ -10,12 +10,16 @@ import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.frontend.GameUiProps
-import nl.hiddewieringa.game.frontend.games.taipan.*
+import nl.hiddewieringa.game.frontend.games.taipan.CardListComponent
+import nl.hiddewieringa.game.frontend.games.taipan.ExchangeCardsComponent
+import nl.hiddewieringa.game.frontend.games.taipan.HiddenPlayerComponent
+import nl.hiddewieringa.game.frontend.games.taipan.PlayerComponent
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.Card
 import nl.hiddewieringa.game.taipan.card.NumberedCard
 import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
+import nl.hiddewieringa.game.taipan.state.TaiPanPlayerStateType
 import org.w3c.dom.HTMLInputElement
 import react.child
 import react.dom.*
@@ -31,7 +35,6 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
     val playerId = props.playerId?.let { TwoTeamPlayerId.valueOf(it) }
 
     val (selectedCards, setSelectedCards) = useState(emptySet<Card>())
-    val (dragonPass, setDragonPass) = useState<DragonPass?>(null)
     val (exchangeCards, setExchangeCards) = useState<Triple<Card?, Card?, Card?>>(Triple(null, null, null))
 
     console.info(gameState, selectedCards.joinToString(", "))
@@ -48,13 +51,8 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
         dispatchAction.dispatch(RequestNextCards)
     }
 
-    val passDragonTrick = {
-        if (dragonPass != null) {
-            dispatchAction.dispatch(PassDragonTrick(dragonPass))
-        } else {
-            // TODO
-            console.error("Not implemented")
-        }
+    val passDragonTrick = { dragonPass: DragonPass ->
+        dispatchAction.dispatch(PassDragonTrick(dragonPass))
     }
 
     val playCards = {
@@ -86,8 +84,6 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
         setSelectedCards(selectedCards.filter { it != card }.toSet())
     }
 
-    val playersToPlay = gameState?.playersToPlay ?: emptyList()
-
     if (playerId == null || gameState == null) {
         p {
             +"No player ID or game state"
@@ -96,16 +92,8 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
     }
 
     styledDiv {
-//        css {
-//            put("transform-style", "preserve-3d")
-//            put("perspective-origin", "top")
-//            position = Position.relative
-//            transform {
-//                perspective(2000.px)
-//            }
-//        }
-
         // score
+        // TODO to component
         styledDiv {
             css { }
 
@@ -116,31 +104,33 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                     put("font-variant", "small-caps")
                 }
 
-                tr {
-                    styledTd {
-                        css {
-                            textAlign = TextAlign.right
-                            paddingRight = 1.rem
+                tbody {
+                    tr {
+                        styledTd {
+                            css {
+                                textAlign = TextAlign.right
+                                paddingRight = 1.rem
+                            }
+                            +"you"
                         }
-                        +"you"
-                    }
-                    td {
-                        +"them"
-                    }
-                }
-                styledTr {
-                    css {
-                        fontSize = (1.5).rem
-                    }
-                    styledTd {
-                        css {
-                            textAlign = TextAlign.right
-                            paddingRight = 1.rem
+                        td {
+                            +"them"
                         }
-                        +points[playerId.team].toString()
                     }
-                    td {
-                        +points[playerId.team.otherTeam()].toString()
+                    styledTr {
+                        css {
+                            fontSize = (1.5).rem
+                        }
+                        styledTd {
+                            css {
+                                textAlign = TextAlign.right
+                                paddingRight = 1.rem
+                            }
+                            +points[playerId.team].toString()
+                        }
+                        td {
+                            +points[playerId.team.otherTeam()].toString()
+                        }
                     }
                 }
             }
@@ -170,33 +160,12 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
             }
 
             val partnerPlayerId = nextPlayer(nextPlayer(playerId))
-//            // TODO make component
-//            val taiPanned = gameState.taiPannedPlayers[partnerPlayerId]
-//            val shouldPlay = gameState.playersToPlay.contains(partnerPlayerId)
-//            val taiPannedStatus = when (taiPanned) {
-//                null -> ""
-//                TaiPanStatus.NORMAL -> "⭐"
-//                TaiPanStatus.GREAT -> "⭐"
-//            }
-//            +"Player ${partnerPlayerId}: Tai pan: $taiPannedStatus. ${if (shouldPlay) "Should play" else "Should not play"}"
-
-//            styledDiv {
-//                css {
-//                    position = Position.absolute
-//                    top = 0.px
-//                    marginTop = (-500).px
-//                    transform {
-//                        translateZ((-300).px)
-//                        translateY(500.px)
-//                    }
-//                }
             child(HiddenPlayerComponent) {
                 attrs.playerId = partnerPlayerId
                 attrs.taiPanned = gameState.taiPannedPlayers[partnerPlayerId]
                 attrs.shouldPlay = gameState.playersToPlay.contains(partnerPlayerId)
                 attrs.numberOfCards = gameState.numberOfCardsPerPlayer[partnerPlayerId] ?: 0
             }
-//            }
         }
 
         styledDiv {
@@ -207,46 +176,24 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
             // left & right
             styledDiv {
                 css {
-                    flex(1.0, 1.0, 30.pct)
+                    flex(1.0, 1.0, 350.px)
 
                     borderLeft = "3px solid blue" // TODO color
                     paddingLeft = 1.rem
                 }
 
                 val leftPlayerId = nextPlayer(playerId)
-//                // TODO make component
-//                val taiPanned = gameState.taiPannedPlayers[leftPlayerId]
-//                val shouldPlay = gameState.playersToPlay.contains(leftPlayerId)
-//                val taiPannedStatus = when (taiPanned) {
-//                    null -> ""
-//                    TaiPanStatus.NORMAL -> "⭐"
-//                    TaiPanStatus.GREAT -> "⭐"
-//                }
-//                +"Player ${leftPlayerId}: Tai pan: $taiPannedStatus. ${if (shouldPlay) "Should play" else "Should not play"}"
-
-//            styledDiv {
-//                css {
-//                    position = Position.absolute
-//                    top = 0.px
-//                    marginTop = (-500).px
-//                    transform {
-//                        rotateY((-90).deg)
-//                        translateZ(300.px)
-//                        translateY(500.px)
-//                    }
-//                }
                 child(HiddenPlayerComponent) {
                     attrs.playerId = leftPlayerId
                     attrs.taiPanned = gameState.taiPannedPlayers[leftPlayerId]
                     attrs.shouldPlay = gameState.playersToPlay.contains(leftPlayerId)
                     attrs.numberOfCards = gameState.numberOfCardsPerPlayer[leftPlayerId] ?: 0
                 }
-//            }
             }
 
             styledDiv {
                 css {
-                    flex(1.0, 1.0, 40.pct)
+                    flex(1.0, 1.0, 50.pct)
 
                     display = Display.flex
                     flexDirection = FlexDirection.column
@@ -276,7 +223,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
 
                     styledDiv {
                         css {
-                            flex(1.0, 0.0, 2.rem)
+                            flex(0.0, 0.0, 2.rem)
                             display = Display.flex
                         }
                         styledImg("Arrow left", "arrow.svg") {
@@ -291,71 +238,56 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                     styledDiv {
                         css {
                             flex(1.0, 1.0)
+
+                            minHeight = 400.px
+                            display = Display.flex
+                            flexDirection = FlexDirection.column
+                            justifyContent = JustifyContent.center
                         }
 
-                        child(CardListComponent) {
-                            attrs.cards = gameState.cards
-                            attrs.showHover = false
-                        }
-
-                        div {
-                            +"Passed cards"
-                            styledDiv {
-                                css {
-                                    display = Display.flex
-                                    justifyContent = JustifyContent.spaceEvenly
-                                    padding(1.rem, 2.rem)
-                                }
-
-                                val (left, forward, right) = exchangeCards
-                                styledDiv {
-                                    css {
-                                        transform {
-                                            rotate((-15).deg)
-                                        }
-                                        put("transform-origin", "bottom")
-                                    }
-
-                                    if (left != null) {
-                                        child(CardComponent) {
-                                            attrs.card = left
-                                        }
-                                    } else {
-                                        child(EmptyCardComponent)
-
+                        when (gameState.stateType) {
+                            TaiPanPlayerStateType.RECEIVE_CARDS -> {
+                                if (gameState.cards.size < 14) {
+                                    +"Receive next cards or tai pan"
+                                    button {
+                                        attrs.onClickFunction = { requestNextCards() }
+                                        +"Receive next cards"
                                     }
                                 }
-                                div {
-                                    if (forward != null) {
-                                        child(CardComponent) {
-                                            attrs.card = forward
-                                        }
-                                    } else {
-                                        child(EmptyCardComponent)
+                            }
+                            TaiPanPlayerStateType.EXCHANGE_CARDS -> {
+                                if (gameState.playersToPlay.contains(playerId)) {
+                                    child(ExchangeCardsComponent) {
+                                        attrs.left = exchangeCards.first
+                                        attrs.forward = exchangeCards.second
+                                        attrs.right = exchangeCards.third
+                                        attrs.exchange = { passCards() }
                                     }
+                                } else {
+                                    +"Wait for the other players to exchange"
                                 }
-                                styledDiv {
-                                    css {
-                                        transform {
-                                            rotate((15).deg)
-                                        }
-                                        put("transform-origin", "bottom")
-                                    }
-
-                                    if (right != null) {
-                                        child(CardComponent) {
-                                            attrs.card = right
-                                        }
-                                    } else {
-                                        child(EmptyCardComponent)
-                                    }
+                            }
+                            TaiPanPlayerStateType.PASS_DRAGON -> {
+                                button {
+                                    attrs.onClickFunction = { passDragonTrick(DragonPass.LEFT) }
+                                    +"Pass dragon left"
+                                }
+                                button {
+                                    attrs.onClickFunction = { passDragonTrick(DragonPass.RIGHT) }
+                                    +"Pass dragon right"
+                                }
+                            }
+                            else -> {
+                                child(CardListComponent) {
+                                    attrs.cards = gameState.cards
+                                    attrs.hoverControls = null
                                 }
                             }
                         }
                     }
                     styledDiv {
                         css {
-                            flex(1.0, 0.0, 2.rem)
+                            flex(0.0, 0.0, 2.rem)
                             display = Display.flex
                         }
                         styledImg("Arrow right", "arrow.svg") {
@@ -384,7 +316,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
 
             styledDiv {
                 css {
-                    flex(1.0, 1.0, 30.pct)
+                    flex(1.0, 1.0, 350.px)
 
                     textAlign = TextAlign.right
                     borderRight = "3px solid blue" // TODO color
@@ -392,35 +324,12 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 }
 
                 val rightPlayerId = nextPlayer(nextPlayer(nextPlayer(playerId)))
-//                // TODO make component
-//                val taiPanned = gameState.taiPannedPlayers[rightPlayerId]
-//                val shouldPlay = gameState.playersToPlay.contains(rightPlayerId)
-//                val taiPannedStatus = when (taiPanned) {
-//                    null -> ""
-//                    TaiPanStatus.NORMAL -> "⭐"
-//                    TaiPanStatus.GREAT -> "⭐"
-//                }
-//                +"Player ${rightPlayerId}: Tai pan: $taiPannedStatus. ${if (shouldPlay) "Should play" else "Should not play"}"
-
-//            styledDiv {
-//                css {
-//                    position = Position.absolute
-//                    right = 0.px
-//                    top = 0.px
-//                    marginTop = (-500).px
-//                    transform {
-//                        rotateY(90.deg)
-//                        translateZ(300.px)
-//                        translateY(500.px)
-//                    }
-//                }
                 child(HiddenPlayerComponent) {
                     attrs.playerId = rightPlayerId
                     attrs.taiPanned = gameState.taiPannedPlayers[rightPlayerId]
                     attrs.shouldPlay = gameState.playersToPlay.contains(rightPlayerId)
                     attrs.numberOfCards = gameState.numberOfCardsPerPlayer[rightPlayerId] ?: 0
                 }
-//            }
             }
         }
 
@@ -430,38 +339,15 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 textAlign = TextAlign.center
             }
 
-            // TODO make component
-//            val taiPanned = gameState.taiPannedPlayers[playerId]
-//            val shouldPlay = gameState.playersToPlay.contains(playerId)
-//            val taiPannedStatus = when (taiPanned) {
-//                null -> ""
-//                TaiPanStatus.NORMAL -> "⭐"
-//                TaiPanStatus.GREAT -> "⭐"
-//            }
-//            +"Tai pan: $taiPannedStatus. ${if (shouldPlay) "Should play" else "Should not play"}"
-
-//            styledDiv {
-//                css {
-//                    position = Position.absolute
-//                    top = 0.px
-//                    marginTop = (-500).px
-//                    transform {
-//                        translateZ(300.px)
-//                        translateY(500.px)
-//                    }
-//                }
-
             child(PlayerComponent) {
                 attrs.playerId = playerId
                 attrs.taiPanned = gameState.taiPannedPlayers[playerId]
                 attrs.shouldPlay = gameState.playersToPlay.contains(playerId)
+                attrs.exchangeCardLeft = { card -> setExchangeCards(Triple(card, exchangeCards.second, exchangeCards.third)) }
+                attrs.exchangeCardForward = { card -> setExchangeCards(Triple(exchangeCards.first, card, exchangeCards.third)) }
+                attrs.exchangeCardRight = { card -> setExchangeCards(Triple(exchangeCards.first, exchangeCards.second, card)) }
                 attrs.cards = gameState.cards.filterNot { it == exchangeCards.first || it == exchangeCards.second || it == exchangeCards.third }.toSet()
             }
-
-//            child(CardListComponent) {
-//                attrs.cards = gameState.cards
-//            }
-//            }
         }
 
         // current trick
@@ -524,25 +410,6 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
             }
         }
 
-        p {
-            +"Dragon pass"
-
-            DragonPass.values().map { dragonPassValue ->
-                label {
-                    attrs.htmlFor = dragonPassValue.toString()
-                    input {
-                        attrs.id = dragonPassValue.toString()
-                        attrs.type = InputType.radio
-                        attrs.name = "dragonPassValue"
-                        attrs.onChangeFunction = {
-                            setDragonPass(dragonPassValue)
-                        }
-                    }
-                    +dragonPassValue.toString()
-                }
-            }
-        }
-
         div {
             h5 {
                 +"Actions"
@@ -557,20 +424,8 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 +"Fold"
             }
             button {
-                attrs.onClickFunction = { requestNextCards() }
-                +"Request next cards"
-            }
-            button {
-                attrs.onClickFunction = { passDragonTrick() }
-                +"Pass dragon trick"
-            }
-            button {
                 attrs.onClickFunction = { playCards() }
                 +"Play cards"
-            }
-            button {
-                attrs.onClickFunction = { passCards() }
-                +"Pass cards"
             }
         }
     }
