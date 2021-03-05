@@ -47,6 +47,8 @@ val ExchangeCardsComponent = functionalComponent<ExchangeCardsProps> { props ->
                 if (left != null) {
                     child(CardComponent) {
                         attrs.card = left
+                        attrs.cardSelected = {}
+                        attrs.cardDeselected = {}
                     }
                 } else {
                     child(EmptyCardComponent)
@@ -61,6 +63,8 @@ val ExchangeCardsComponent = functionalComponent<ExchangeCardsProps> { props ->
                 if (forward != null) {
                     child(CardComponent) {
                         attrs.card = forward
+                        attrs.cardSelected = {}
+                        attrs.cardDeselected = {}
                     }
                 } else {
                     child(EmptyCardComponent)
@@ -77,6 +81,8 @@ val ExchangeCardsComponent = functionalComponent<ExchangeCardsProps> { props ->
                 if (right != null) {
                     child(CardComponent) {
                         attrs.card = right
+                        attrs.cardSelected = {}
+                        attrs.cardDeselected = {}
                     }
                 } else {
                     child(EmptyCardComponent)

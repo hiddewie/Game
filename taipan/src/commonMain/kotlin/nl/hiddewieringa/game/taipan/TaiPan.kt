@@ -419,7 +419,7 @@ data class TaiPanPlayTrick(
         playerCards,
         taiPannedPlayers,
         roundIndex,
-        0,
+        1,
         TwoTeamPlayerId.values()
             .find { playerId -> playerCards.getValue(playerId).any { it is Mahjong } }
             ?: throw IllegalStateException("No player has the Mahjong"),
@@ -440,6 +440,7 @@ data class TaiPanPlayTrick(
                     lastPlayedCards = Triple(event.player, event.cards, event.mahjongRequest),
                     folds = 0,
                     currentPlayer = nextPlayer(event.player),
+                    trickCards = trickCards + event.cards.cards
                 )
 
             is PlayerFolds ->

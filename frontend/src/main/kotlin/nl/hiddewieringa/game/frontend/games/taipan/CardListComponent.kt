@@ -2,6 +2,7 @@ package nl.hiddewieringa.game.frontend.games.taipan
 
 import kotlinx.css.*
 import nl.hiddewieringa.game.taipan.card.Card
+import nl.hiddewieringa.game.taipan.card.CardSet
 import react.RBuilder
 import react.RProps
 import react.child
@@ -13,7 +14,11 @@ import kotlin.Float
 
 external interface CardListProps : RProps {
     var cards: Iterable<Card>
+    var selectedCards: CardSet
     var hoverControls: ((Card) -> (RBuilder) -> Unit)?
+    var small: Boolean
+    var cardSelected: (Card) -> Unit
+    var cardDeselected: (Card) -> Unit
 }
 
 val cardListRuleSet: (Float, Boolean) -> RuleSet = { index, large ->
@@ -32,8 +37,8 @@ val cardListRuleSet: (Float, Boolean) -> RuleSet = { index, large ->
 val CardListComponent = functionalComponent<CardListProps> { props ->
     // TODO store custom card order for manually sorted hand
     val cards = props.cards.sorted()
-    val count = cards.size // <= 14
-    val middleIndex: Float = (count - 1).toFloat() / 2 // <= 6.5
+//    val count = cards.size // <= 14
+//    val middleIndex: Float = (count - 1).toFloat() / 2 // <= 6.5
 
     styledDiv {
         css {
@@ -41,18 +46,24 @@ val CardListComponent = functionalComponent<CardListProps> { props ->
 
             display = Display.inlineFlex
             justifyContent = JustifyContent.center
+
+            paddingTop = 2.rem
 //            put("flex-flow", "wrap")
 //            paddingRight = 45.px
         }
 
         cards.mapIndexed { index, card ->
-            val indexFromMiddle = middleIndex - index.toFloat()
+//            val indexFromMiddle = middleIndex - index.toFloat()
 //            styledDiv {
 //                css(cardListRuleSet(indexFromMiddle, index == count - 1))
             child(CardComponent) {
                 attrs.card = card
-                attrs.small = false
+                attrs.small = props.small
+                attrs.selected = props.selectedCards.contains(card)
+                attrs.content = null
                 attrs.hoverControls = props.hoverControls?.let { controls -> controls(card) }
+                attrs.cardSelected = { props.cardSelected(card) }
+                attrs.cardDeselected = { props.cardDeselected(card) }
             }
 //            }
         }

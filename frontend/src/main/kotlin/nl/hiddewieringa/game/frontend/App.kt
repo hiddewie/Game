@@ -62,6 +62,10 @@ val GamesComponent = functionalComponent<RProps> {
             return@div
         }
 
+        h1 {
+            +"Welcome, pick a game to play!"
+        }
+
         div("uk-grid uk-child-width-1-4") {
             games.map { item ->
                 div {

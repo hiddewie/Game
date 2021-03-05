@@ -5,6 +5,7 @@ import kotlinx.css.properties.LineHeight
 import kotlinx.css.properties.boxShadow
 import kotlinx.css.properties.lh
 import kotlinx.html.classes
+import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.taipan.card.*
 import react.RBuilder
 import react.RProps
@@ -12,7 +13,7 @@ import react.functionalComponent
 import styled.css
 import styled.styledDiv
 
-val cardCssRuleSet: (Boolean, Boolean) -> RuleSet = { small, showHover ->
+val cardCssRuleSet: (Boolean, Boolean, Boolean) -> RuleSet = { small, selected, showHover ->
     {
         height = if (small) 60.px else 120.px
         width = if (small) 40.px else 80.px
@@ -25,6 +26,7 @@ val cardCssRuleSet: (Boolean, Boolean) -> RuleSet = { small, showHover ->
         display = Display.inlineBlock
         border = "1px solid #666"
         borderRadius = 3.px
+        marginTop = if (selected) (-2).rem else 0.rem
         boxShadow(rgba(0, 0, 0, 0.1), (-4).px, 0.px, 4.px, 0.px)
 
         if (showHover) {
@@ -49,6 +51,9 @@ external interface PartialCardProps : RProps {
 
 external interface CardProps : PartialCardProps {
     var card: Card
+    var selected: Boolean
+    var cardSelected: () -> Unit
+    var cardDeselected: () -> Unit
 }
 
 val CardComponent = functionalComponent<CardProps> { props ->
@@ -79,9 +84,16 @@ val CardComponent = functionalComponent<CardProps> { props ->
                 }
             }
         }
-        css(cardCssRuleSet(props.small, props.hoverControls != null))
+        css(cardCssRuleSet(props.small, props.selected, props.hoverControls != null))
 
         attrs.classes = setOf(cardClass)
+        attrs.onClickFunction = {
+            if (props.selected) {
+                props.cardDeselected()
+            } else {
+                props.cardSelected()
+            }
+        }
 
         val hoverControls = props.hoverControls
         if (hoverControls != null) {
@@ -123,7 +135,7 @@ val CardComponent = functionalComponent<CardProps> { props ->
 val EmptyCardComponent = functionalComponent<PartialCardProps> { props ->
     styledDiv {
         attrs.classes = setOf("blankcard")
-        css(cardCssRuleSet(props.small, props.hoverControls != null))
+        css(cardCssRuleSet(props.small, false, props.hoverControls != null))
         if (props.content != null) {
             +props.content.toString()
         }

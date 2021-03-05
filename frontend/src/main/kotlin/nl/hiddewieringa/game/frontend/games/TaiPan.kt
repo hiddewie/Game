@@ -5,6 +5,7 @@ import kotlinx.css.properties.deg
 import kotlinx.css.properties.rotate
 import kotlinx.css.properties.transform
 import kotlinx.html.InputType
+import kotlinx.html.classes
 import kotlinx.html.id
 import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
@@ -153,13 +154,19 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
             +"Played cards: ${gameState.playedCards.joinToString(" - ")}"
         }
 
+        val leftPlayerId = nextPlayer(playerId)
+        val partnerPlayerId = nextPlayer(nextPlayer(playerId))
+        val rightPlayerId = nextPlayer(nextPlayer(nextPlayer(playerId)))
+
+        val lastPlayedPlayer = gameState.lastPlayedCards?.first
+        val lastPlayedCards = gameState.lastPlayedCards?.second
+
         // partner
         styledDiv {
             css {
                 textAlign = TextAlign.center
             }
 
-            val partnerPlayerId = nextPlayer(nextPlayer(playerId))
             child(HiddenPlayerComponent) {
                 attrs.playerId = partnerPlayerId
                 attrs.taiPanned = gameState.taiPannedPlayers[partnerPlayerId]
@@ -178,11 +185,11 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 css {
                     flex(1.0, 1.0, 350.px)
 
-                    borderLeft = "3px solid blue" // TODO color
-                    paddingLeft = 1.rem
+                    display = Display.flex
+                    flexDirection = FlexDirection.column
+                    justifyContent = JustifyContent.center
                 }
 
-                val leftPlayerId = nextPlayer(playerId)
                 child(HiddenPlayerComponent) {
                     attrs.playerId = leftPlayerId
                     attrs.taiPanned = gameState.taiPannedPlayers[leftPlayerId]
@@ -204,6 +211,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                         flex(0.0, 1.0)
 
                         textAlign = TextAlign.center
+                        visibility = if (lastPlayedPlayer == partnerPlayerId) Visibility.visible else Visibility.hidden
                     }
                     styledImg("Arrow up", "arrow.svg") {
                         css {
@@ -225,6 +233,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                         css {
                             flex(0.0, 0.0, 2.rem)
                             display = Display.flex
+                            visibility = if (lastPlayedPlayer == leftPlayerId) Visibility.visible else Visibility.hidden
                         }
                         styledImg("Arrow left", "arrow.svg") {
                             css {
@@ -245,14 +254,21 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                             justifyContent = JustifyContent.center
                         }
 
+                        // TODO improve status texts UI
+
                         when (gameState.stateType) {
                             TaiPanPlayerStateType.RECEIVE_CARDS -> {
-                                if (gameState.cards.size < 14) {
-                                    +"Receive next cards or tai pan"
-                                    button {
-                                        attrs.onClickFunction = { requestNextCards() }
-                                        +"Receive next cards"
+                                if (gameState.playersToPlay.contains(playerId)) {
+                                    div {
+                                        +"Receive next cards or tai pan"
+                                        button {
+                                            attrs.classes = setOf("uk-button", "uk-button-primary")
+                                            attrs.onClickFunction = { requestNextCards() }
+                                            +"Receive next cards"
+                                        }
                                     }
+                                } else {
+                                    +"Wait for the other players to tai pan or receive their cards"
                                 }
                             }
                             TaiPanPlayerStateType.EXCHANGE_CARDS -> {
@@ -268,19 +284,65 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                 }
                             }
                             TaiPanPlayerStateType.PASS_DRAGON -> {
-                                button {
-                                    attrs.onClickFunction = { passDragonTrick(DragonPass.LEFT) }
-                                    +"Pass dragon left"
+                                styledDiv {
+                                    css {
+                                        display = Display.flex
+                                        justifyContent = JustifyContent.spaceBetween
+                                    }
+
+                                    button {
+                                        attrs.classes = setOf("uk-button", "uk-button-primary")
+                                        attrs.onClickFunction = { passDragonTrick(DragonPass.LEFT) }
+                                        +"Pass dragon left"
+                                    }
+                                    button {
+                                        attrs.classes = setOf("uk-button", "uk-button-primary")
+                                        attrs.onClickFunction = { passDragonTrick(DragonPass.RIGHT) }
+                                        +"Pass dragon right"
+                                    }
                                 }
-                                button {
-                                    attrs.onClickFunction = { passDragonTrick(DragonPass.RIGHT) }
-                                    +"Pass dragon right"
+                            }
+                            TaiPanPlayerStateType.PLAY -> {
+                                // TODO allow viewing the played cards
+//                                child(CardListComponent) {
+//                                    attrs.cards = gameState.trickCards
+//                                    attrs.hoverControls = null
+//                                    attrs.small = true
+//                                }
+                                child(CardListComponent) {
+                                    attrs.cards = lastPlayedCards?.cards ?: emptySet()
+                                    attrs.hoverControls = null
+                                    attrs.selectedCards = emptySet()
+                                    attrs.cardSelected = { }
+                                    attrs.cardDeselected = { }
+                                }
+
+                                styledDiv {
+                                    css {
+                                        display = Display.flex
+                                        justifyContent = JustifyContent.center
+                                        visibility = if (gameState.playersToPlay.contains(playerId)) Visibility.visible else Visibility.hidden
+                                    }
+
+                                    button {
+                                        attrs.classes = setOf("uk-button", "uk-button-primary")
+                                        attrs.onClickFunction = { playCards() }
+                                        +"Play"
+                                    }
+                                    button {
+                                        attrs.classes = setOf("uk-button", "uk-button-primary")
+                                        attrs.onClickFunction = { fold() }
+                                        +"Fold"
+                                    }
                                 }
                             }
                             else -> {
                                 child(CardListComponent) {
                                     attrs.cards = gameState.cards
+                                    attrs.selectedCards = emptySet()
                                     attrs.hoverControls = null
+                                    attrs.cardSelected = { }
+                                    attrs.cardDeselected = { }
                                 }
                             }
                         }
@@ -289,6 +351,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                         css {
                             flex(0.0, 0.0, 2.rem)
                             display = Display.flex
+                            visibility = if (lastPlayedPlayer == rightPlayerId) Visibility.visible else Visibility.hidden
                         }
                         styledImg("Arrow right", "arrow.svg") {
                             css {
@@ -305,6 +368,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                         flex(0.0, 1.0)
 
                         textAlign = TextAlign.center
+                        visibility = if (lastPlayedPlayer == playerId) Visibility.visible else Visibility.hidden
                     }
                     styledImg("Arrow down", "arrow.svg") {
                         css {
@@ -318,12 +382,13 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 css {
                     flex(1.0, 1.0, 350.px)
 
+                    display = Display.flex
+                    flexDirection = FlexDirection.column
+                    justifyContent = JustifyContent.center
+
                     textAlign = TextAlign.right
-                    borderRight = "3px solid blue" // TODO color
-                    paddingRight = 1.rem
                 }
 
-                val rightPlayerId = nextPlayer(nextPlayer(nextPlayer(playerId)))
                 child(HiddenPlayerComponent) {
                     attrs.playerId = rightPlayerId
                     attrs.taiPanned = gameState.taiPannedPlayers[rightPlayerId]
@@ -346,7 +411,10 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 attrs.exchangeCardLeft = { card -> setExchangeCards(Triple(card, exchangeCards.second, exchangeCards.third)) }
                 attrs.exchangeCardForward = { card -> setExchangeCards(Triple(exchangeCards.first, card, exchangeCards.third)) }
                 attrs.exchangeCardRight = { card -> setExchangeCards(Triple(exchangeCards.first, exchangeCards.second, card)) }
+                attrs.cardSelected = { card -> setSelectedCards(selectedCards + card) }
+                attrs.cardDeselected = { card -> setSelectedCards(selectedCards - card) }
                 attrs.cards = gameState.cards.filterNot { it == exchangeCards.first || it == exchangeCards.second || it == exchangeCards.third }.toSet()
+                attrs.selectedCards = selectedCards
             }
         }
 
@@ -354,7 +422,15 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
         styledDiv {
             css {}
 
-            +"Current trick ${gameState.trickCards} (${gameState.trickCards.size} cards, points ${gameState.trickCards.sumBy(Card::points)})"
+            child(CardListComponent) {
+                attrs.cards = gameState.trickCards
+                attrs.selectedCards = emptySet()
+                attrs.hoverControls = null
+                attrs.cardSelected = { }
+                attrs.cardDeselected = { }
+            }
+
+//            +"Current trick ${gameState.trickCards} (${gameState.trickCards.size} cards, points ${gameState.trickCards.sumBy(Card::points)})"
         }
 
         ul {
