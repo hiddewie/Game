@@ -4,6 +4,7 @@ import kotlinx.css.*
 import kotlinx.css.properties.deg
 import kotlinx.css.properties.rotate
 import kotlinx.css.properties.transform
+import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.taipan.TaiPanStatus
@@ -12,6 +13,7 @@ import nl.hiddewieringa.game.taipan.card.CardSet
 import react.RBuilder
 import react.RProps
 import react.child
+import react.dom.button
 import react.dom.div
 import react.dom.span
 import react.functionalComponent
@@ -37,6 +39,8 @@ external interface PlayerProps : PartialPlayerProps {
     var exchangeCardRight: (Card) -> Unit
     var cardSelected: (Card) -> Unit
     var cardDeselected: (Card) -> Unit
+    var taiPan: () -> Unit
+    var canTaiPan: Boolean
 }
 
 val HiddenPlayerComponent = functionalComponent<HiddenPlayerProps> { props ->
@@ -72,7 +76,7 @@ val PlayerComponent = functionalComponent<PlayerProps> { props ->
                             css {
                                 width = 1.2.rem
                                 margin(0.4.rem, 0.0.rem)
-                                cursor = kotlinx.css.Cursor.pointer
+                                cursor = Cursor.pointer
                                 transform {
                                     rotate(90.deg)
                                 }
@@ -85,7 +89,7 @@ val PlayerComponent = functionalComponent<PlayerProps> { props ->
                             css {
                                 width = 1.2.rem
                                 margin(0.2.rem, 0.4.rem, 0.6.rem)
-                                cursor = kotlinx.css.Cursor.pointer
+                                cursor = Cursor.pointer
                                 transform {
                                     rotate(180.deg)
                                 }
@@ -98,7 +102,7 @@ val PlayerComponent = functionalComponent<PlayerProps> { props ->
                             css {
                                 width = 1.2.rem
                                 margin(0.4.rem, 0.0.rem)
-                                cursor = kotlinx.css.Cursor.pointer
+                                cursor = Cursor.pointer
                                 transform {
                                     rotate(270.deg)
                                 }
@@ -122,6 +126,15 @@ val PlayerComponent = functionalComponent<PlayerProps> { props ->
             TaiPanStatus.GREAT -> "★★"
         }
         +"Tai pan: $taiPannedStatus. ${if (props.shouldPlay) "Should play" else "Should not play"}"
+        div {
+            button {
+                attrs.classes = setOf("uk-button", "uk-button-primary")
+                attrs.disabled = !props.canTaiPan
+                attrs.onClickFunction = { props.taiPan() }
+
+                +"Tai Pan"
+            }
+        }
         div {
             child(CardListComponent) {
                 attrs.cards = props.cards

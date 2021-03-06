@@ -4,10 +4,7 @@ import kotlinx.css.*
 import kotlinx.css.properties.deg
 import kotlinx.css.properties.rotate
 import kotlinx.css.properties.transform
-import kotlinx.html.InputType
 import kotlinx.html.classes
-import kotlinx.html.id
-import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.frontend.GameUiProps
@@ -17,11 +14,9 @@ import nl.hiddewieringa.game.frontend.games.taipan.HiddenPlayerComponent
 import nl.hiddewieringa.game.frontend.games.taipan.PlayerComponent
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.Card
-import nl.hiddewieringa.game.taipan.card.NumberedCard
 import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerStateType
-import org.w3c.dom.HTMLInputElement
 import react.child
 import react.dom.*
 import react.functionalComponent
@@ -78,18 +73,15 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
         }
     }
 
-    val selectedCard = { card: Card ->
-        setSelectedCards(selectedCards.plusElement(card))
-    }
-    val deselectedCard = { card: Card ->
-        setSelectedCards(selectedCards.filter { it != card }.toSet())
-    }
-
     if (playerId == null || gameState == null) {
         p {
             +"No player ID or game state"
         }
         return@functionalComponent
+    }
+
+    if ((selectedCards - gameState.cards).isNotEmpty()) {
+        setSelectedCards(selectedCards.intersect(gameState.cards))
     }
 
     styledDiv {
@@ -413,95 +405,14 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 attrs.exchangeCardRight = { card -> setExchangeCards(Triple(exchangeCards.first, exchangeCards.second, card)) }
                 attrs.cardSelected = { card -> setSelectedCards(selectedCards + card) }
                 attrs.cardDeselected = { card -> setSelectedCards(selectedCards - card) }
+                attrs.taiPan = { callTaiPan() }
+                attrs.canTaiPan = !gameState.taiPannedPlayers.containsKey(playerId) && when (gameState.stateType) {
+                    TaiPanPlayerStateType.RECEIVE_CARDS -> true
+                    TaiPanPlayerStateType.PLAY -> gameState.cards.size == 14
+                    else -> false
+                }
                 attrs.cards = gameState.cards.filterNot { it == exchangeCards.first || it == exchangeCards.second || it == exchangeCards.third }.toSet()
                 attrs.selectedCards = selectedCards
-            }
-        }
-
-        // current trick
-        styledDiv {
-            css {}
-
-            child(CardListComponent) {
-                attrs.cards = gameState.trickCards
-                attrs.selectedCards = emptySet()
-                attrs.hoverControls = null
-                attrs.cardSelected = { }
-                attrs.cardDeselected = { }
-            }
-
-//            +"Current trick ${gameState.trickCards} (${gameState.trickCards.size} cards, points ${gameState.trickCards.sumBy(Card::points)})"
-        }
-
-        ul {
-            val cards = gameState.cards
-            cards.map { card ->
-                li {
-                    input {
-                        attrs.type = InputType.checkBox
-                        attrs.onChangeFunction = { event ->
-                            if ((event.target as HTMLInputElement).checked) {
-                                selectedCard(card)
-                            } else {
-                                deselectedCard(card)
-                            }
-                        }
-                    }
-
-                    +"$card (${card.points})"
-
-                    val uniqueString = "${card::class.simpleName}${if (card is NumberedCard) card.suit else null}${if (card is NumberedCard) card.value else null}"
-
-                    label {
-                        attrs.htmlFor = "exchangeLeft$uniqueString"
-                        input {
-                            attrs.id = "exchangeLeft$uniqueString"
-                            attrs.type = InputType.radio
-                            attrs.name = "exchangeLeft"
-                            attrs.onChangeFunction = { setExchangeCards(Triple(card, exchangeCards.second, exchangeCards.third)) }
-                        }
-                        +"exchange left"
-                    }
-                    label {
-                        attrs.htmlFor = "exchangeForward$uniqueString"
-                        input {
-                            attrs.id = "exchangeForward$uniqueString"
-                            attrs.type = InputType.radio
-                            attrs.name = "exchangeForward"
-                            attrs.onChangeFunction = { setExchangeCards(Triple(exchangeCards.first, card, exchangeCards.third)) }
-                        }
-                        +"exchange forward"
-                    }
-                    label {
-                        attrs.htmlFor = "exchangeRight$uniqueString"
-                        input {
-                            attrs.id = "exchangeRight$uniqueString"
-                            attrs.type = InputType.radio
-                            attrs.name = "exchangeRight"
-                            attrs.onChangeFunction = { setExchangeCards(Triple(exchangeCards.first, exchangeCards.second, card)) }
-                        }
-                        +"exchange right"
-                    }
-                }
-            }
-        }
-
-        div {
-            h5 {
-                +"Actions"
-            }
-
-            button {
-                attrs.onClickFunction = { callTaiPan() }
-                +"Call tai pan"
-            }
-            button {
-                attrs.onClickFunction = { fold() }
-                +"Fold"
-            }
-            button {
-                attrs.onClickFunction = { playCards() }
-                +"Play cards"
             }
         }
     }
