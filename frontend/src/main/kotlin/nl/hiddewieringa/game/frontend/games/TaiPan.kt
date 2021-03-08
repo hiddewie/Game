@@ -8,20 +8,21 @@ import kotlinx.html.classes
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.frontend.GameUiProps
-import nl.hiddewieringa.game.frontend.games.taipan.CardListComponent
-import nl.hiddewieringa.game.frontend.games.taipan.ExchangeCardsComponent
-import nl.hiddewieringa.game.frontend.games.taipan.HiddenPlayerComponent
-import nl.hiddewieringa.game.frontend.games.taipan.PlayerComponent
+import nl.hiddewieringa.game.frontend.games.taipan.*
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.Card
 import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerStateType
 import react.child
-import react.dom.*
+import react.dom.button
+import react.dom.div
+import react.dom.p
 import react.functionalComponent
 import react.useState
-import styled.*
+import styled.css
+import styled.styledDiv
+import styled.styledImg
 
 // TODO implement auto-fold with random delay
 
@@ -32,8 +33,6 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
 
     val (selectedCards, setSelectedCards) = useState(emptySet<Card>())
     val (exchangeCards, setExchangeCards) = useState<Triple<Card?, Card?, Card?>>(Triple(null, null, null))
-
-    console.info(gameState, selectedCards.joinToString(", "))
 
     val callTaiPan = {
         dispatchAction.dispatch(CallTaiPan)
@@ -84,63 +83,15 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
         setSelectedCards(selectedCards.intersect(gameState.cards))
     }
 
-    styledDiv {
-        // score
-        // TODO to component
-        styledDiv {
-            css { }
-
-            val points = gameState.points
-            styledTable {
-                css {
-                    margin = "0 auto"
-                    put("font-variant", "small-caps")
-                }
-
-                tbody {
-                    tr {
-                        styledTd {
-                            css {
-                                textAlign = TextAlign.right
-                                paddingRight = 1.rem
-                            }
-                            +"you"
-                        }
-                        td {
-                            +"them"
-                        }
-                    }
-                    styledTr {
-                        css {
-                            fontSize = (1.5).rem
-                        }
-                        styledTd {
-                            css {
-                                textAlign = TextAlign.right
-                                paddingRight = 1.rem
-                            }
-                            +points[playerId.team].toString()
-                        }
-                        td {
-                            +points[playerId.team.otherTeam()].toString()
-                        }
-                    }
-                }
-            }
-
-            val round = gameState.roundIndex
-            val trick = gameState.trickIndex
-            styledDiv {
-                css {
-                    textAlign = TextAlign.center
-                    put("font-variant", "small-caps")
-                }
-                if (round != null && trick != null) {
-                    +"Round $round ${Typography.mdash} Trick $trick"
-                }
-            }
+    div {
+        child(ScoreComponent) {
+            attrs.points = gameState.points
+            attrs.playerId = playerId
+            attrs.round = gameState.roundIndex
+            attrs.trick = gameState.trickIndex
         }
 
+        // TODO to better component
         styledDiv {
             css {}
             +"Played cards: ${gameState.playedCards.joinToString(" - ")}"
