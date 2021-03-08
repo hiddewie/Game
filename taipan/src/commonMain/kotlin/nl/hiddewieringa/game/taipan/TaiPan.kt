@@ -2,7 +2,6 @@ package nl.hiddewieringa.game.taipan
 
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.taipan.card.*
-import kotlin.comparisons.naturalOrder
 import kotlin.random.Random
 
 sealed class TaiPanState : GameState<TaiPanState>
@@ -97,7 +96,7 @@ internal fun hasStraightOfLengthAndContainsValue(value: Int, minLength: Int, car
     minValueWithPhoenixDown++
 
     return (maxValueWithPhoenixUp - minValue + 1 >= minLength) ||
-        (maxValue - minValueWithPhoenixDown + 1 >= minLength)
+            (maxValue - minValueWithPhoenixDown + 1 >= minLength)
 }
 
 internal fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: Collection<Card>): Boolean {
@@ -127,7 +126,7 @@ internal fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: 
     return when (previousCards) {
         is QuadrupleBomb ->
             hasWishStraightBomb ||
-                (previousCards.value < wish && cardValueCount.getValue(wish) == 4)
+                    (previousCards.value < wish && cardValueCount.getValue(wish) == 4)
         is StraightBomb ->
             cards.filterIsInstance<NumberedCard>()
                 .filter { it.value == wish }
@@ -146,33 +145,33 @@ internal fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: 
             hasWishBomb || (previousCards.value < wish && (cardValueCount.getValue(wish) >= 3 || cardValueCount.getValue(wish) == 2 && hasPhoenix))
         is FullHouse ->
             hasWishBomb ||
-                if (hasPhoenix) {
-                    (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 1 }.isNotEmpty()) ||
-                        (previousCards.value < wish && cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
-                        (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 2 }.isNotEmpty())
-                } else {
-                    (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
-                        (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 3 }.isNotEmpty())
-                }
+                    if (hasPhoenix) {
+                        (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 1 }.isNotEmpty()) ||
+                                (previousCards.value < wish && cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
+                                (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 2 }.isNotEmpty())
+                    } else {
+                        (previousCards.value < wish && cardValueCount.getValue(wish) >= 3 && cardValueCount.filter { (number, count) -> number != wish && count >= 2 }.isNotEmpty()) ||
+                                (cardValueCount.getValue(wish) >= 2 && cardValueCount.filter { (number, count) -> number > wish && count >= 3 }.isNotEmpty())
+                    }
         is TupleSequence ->
             hasWishBomb ||
-                if (hasPhoenix) {
-                    val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
-                    val hasOnlySingle = cardValueCount.filter { (_, count) -> count == 1 }.mapValues { true }.withDefault { false }
-                    ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
-                        val doubleCount = (value until (value + previousCards.length)).count { hasDouble.getValue(it) }
-                        val singleCount = (value until (value + previousCards.length)).count { hasOnlySingle.getValue(it) }
-                        doubleCount == previousCards.length || (doubleCount == previousCards.length - 1 && singleCount == 1)
+                    if (hasPhoenix) {
+                        val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
+                        val hasOnlySingle = cardValueCount.filter { (_, count) -> count == 1 }.mapValues { true }.withDefault { false }
+                        ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
+                            val doubleCount = (value until (value + previousCards.length)).count { hasDouble.getValue(it) }
+                            val singleCount = (value until (value + previousCards.length)).count { hasOnlySingle.getValue(it) }
+                            doubleCount == previousCards.length || (doubleCount == previousCards.length - 1 && singleCount == 1)
+                        }
+                    } else {
+                        val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
+                        ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
+                            (value until (value + previousCards.length)).all { hasDouble.getValue(it) }
+                        }
                     }
-                } else {
-                    val hasDouble = cardValueCount.filter { (_, count) -> count >= 2 }.mapValues { true }.withDefault { false }
-                    ((previousCards.minValue + 1)..(NumberedCard.ACE - previousCards.length + 1)).any { value ->
-                        (value until (value + previousCards.length)).all { hasDouble.getValue(it) }
-                    }
-                }
         is Straight ->
             hasWishBomb ||
-                hasStraightOfLengthAndContainsValue(wish, previousCards.length, cards.filterIsInstance<NumberedCard>().filter { previousCards.minValue < it.value } + cards.filterIsInstance<Phoenix>())
+                    hasStraightOfLengthAndContainsValue(wish, previousCards.length, cards.filterIsInstance<NumberedCard>().filter { previousCards.minValue < it.value } + cards.filterIsInstance<Phoenix>())
     }
 }
 
@@ -226,7 +225,7 @@ data class TaiPan(
                 )
 
             is PlayerTaiPanned ->
-                copy(taiPannedPlayers = taiPannedPlayers + mapOf(event.playerId to event.status))
+                copy(taiPannedPlayers = taiPannedPlayers + mapOf(event.player to event.status))
 
             is GameEnded ->
                 TaiPanFinalScore(
@@ -253,7 +252,7 @@ data class TaiPan(
             is RequestNextCards ->
                 when {
                     playerCards.getValue(playerId).size > 8 ->
-                        IllegalAction("Already received next cards", action)
+                        IllegalAction("Already received next cards", playerId, action)
 
                     else ->
                         CardsHaveBeenDealt(playerId, playerCardsToGive.getValue(playerId).subList(8, 14).toSet())
@@ -262,7 +261,7 @@ data class TaiPan(
             is CallTaiPan ->
                 when {
                     taiPannedPlayers.containsKey(playerId) ->
-                        IllegalAction("Already tai panned", action)
+                        IllegalAction("Already tai panned", playerId, action)
                     playerCards.getValue(playerId).size < 14 ->
                         PlayerTaiPanned(playerId, TaiPanStatus.GREAT)
                     else ->
@@ -270,7 +269,7 @@ data class TaiPan(
                 }
 
             else ->
-                IllegalAction("Illegal move", action)
+                IllegalAction("Illegal move", playerId, action)
         }
 
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
@@ -294,6 +293,7 @@ data class TaiPan(
             GameDecision(playerCards.all { (_, cards) -> cards.size == 14 }) {
                 AllPlayersHaveReceivedCards
             },
+            // TODO add game decision if great tai pan and not all cards, receive next cards.
         )
 }
 
@@ -324,13 +324,13 @@ data class TaiPanPassCards(
 
     override fun applyEvent(event: TaiPanEvent): TaiPanState =
         when (event) {
-            is CardsHaveBeenPassed ->
+            is CardsHaveBeenExchanged ->
                 copy(passedCards = passedCards + mapOf(event.player to event.pass))
 
             is PlayerTaiPanned ->
-                copy(taiPannedPlayers = taiPannedPlayers + mapOf(event.playerId to event.status))
+                copy(taiPannedPlayers = taiPannedPlayers + mapOf(event.player to event.status))
 
-            AllPlayersHavePassedCards ->
+            AllPlayersHaveExchangedCards ->
                 TaiPanPlayTrick(
                     parameters,
                     points,
@@ -348,32 +348,32 @@ data class TaiPanPassCards(
             is CardPass ->
                 when {
                     passedCards.containsKey(playerId) ->
-                        IllegalAction("Already passed", action)
+                        IllegalAction("Already passed", playerId, action)
 
                     playerCards.getValue(playerId).containsAll(setOf(action.cardPass.left, action.cardPass.forward, action.cardPass.right)) ->
-                        CardsHaveBeenPassed(playerId, action.cardPass)
+                        CardsHaveBeenExchanged(playerId, action.cardPass)
 
                     else ->
-                        IllegalAction("Player does not have cards", action)
+                        IllegalAction("Player does not have cards", playerId, action)
                 }
 
             is CallTaiPan ->
                 when {
                     taiPannedPlayers.containsKey(playerId) ->
-                        IllegalAction("Already tai panned", action)
+                        IllegalAction("Already tai panned", playerId, action)
 
                     else ->
                         PlayerTaiPanned(playerId, TaiPanStatus.NORMAL)
                 }
 
             else ->
-                IllegalAction("Illegal move", action)
+                IllegalAction("Illegal move", playerId, action)
         }
 
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
         listOf(
             GameDecision(passedCards.size == 4) {
-                AllPlayersHavePassedCards
+                AllPlayersHaveExchangedCards
             }
         )
 
@@ -450,7 +450,7 @@ data class TaiPanPlayTrick(
                 )
 
             is PlayerTaiPanned ->
-                copy(taiPannedPlayers = taiPannedPlayers + mapOf(event.playerId to event.status))
+                copy(taiPannedPlayers = taiPannedPlayers + mapOf(event.player to event.status))
 
             is MahjongWishRequested ->
                 copy(mahjongWish = mahjongWish.wish(MahjongRequest(event.value)))
@@ -497,18 +497,18 @@ data class TaiPanPlayTrick(
 
                 when {
                     !playerCards.getValue(playerId).containsAll(action.cards) ->
-                        IllegalAction("Player does not have played cards", action)
+                        IllegalAction("Player does not have played cards", playerId, action)
 
                     playedCards == null ->
-                        IllegalAction("Not a valid combination", action)
+                        IllegalAction("Not a valid combination", playerId, action)
 
                     lastPlayedCards != null && !canCardsBePlayed(lastPlayedCards.second, playedCards) ->
-                        IllegalAction("This combination is incompatible with previously played cards", action)
+                        IllegalAction("This combination is incompatible with previously played cards", playerId, action)
 
                     mahjongWish.present &&
-                        !action.cards.filterIsInstance<NumberedCard>().any { it.value == mahjongWish.value } &&
-                        cardsContainWish(mahjongWish.value, playerCards.getValue(currentPlayer)) ->
-                        IllegalAction("Must play the Mahjong wish", action)
+                            !action.cards.filterIsInstance<NumberedCard>().any { it.value == mahjongWish.value } &&
+                            cardsContainWish(mahjongWish.value, playerCards.getValue(currentPlayer)) ->
+                        IllegalAction("Must play the Mahjong wish", playerId, action)
 
                     else ->
                         PlayerPlayedCards(currentPlayer, playedCards, action.addons.filterIsInstance<MahjongRequest>().firstOrNull())
@@ -518,13 +518,13 @@ data class TaiPanPlayTrick(
             playerId == currentPlayer && action is Fold ->
                 when {
                     lastPlayedCards != null && mahjongWish.present && cardsContainWish(mahjongWish.value, lastPlayedCards.second, playerCards.getValue(currentPlayer)) ->
-                        IllegalAction("Must play the Mahjong wish", action)
+                        IllegalAction("Must play the Mahjong wish", playerId, action)
 
                     lastPlayedCards == null && mahjongWish.present && cardsContainWish(mahjongWish.value, playerCards.getValue(currentPlayer)) ->
-                        IllegalAction("Must play the Mahjong wish", action)
+                        IllegalAction("Must play the Mahjong wish", playerId, action)
 
                     lastPlayedCards == null ->
-                        IllegalAction("Must play cards because player begins trick", action)
+                        IllegalAction("Must play cards because player begins trick", playerId, action)
 
                     else ->
                         PlayerFolds(currentPlayer)
@@ -534,33 +534,33 @@ data class TaiPanPlayTrick(
                 val playedCombination = findCardCombination(lastPlayedCards?.second, action.cards, action.addons)
                 when {
                     playedCombination == null ->
-                        IllegalAction("Not a valid combination", action)
+                        IllegalAction("Not a valid combination", playerId, action)
 
                     !playerCards.getValue(playerId).containsAll(action.cards) ->
-                        IllegalAction("Player does not have played cards", action)
+                        IllegalAction("Player does not have played cards", playerId, action)
 
                     playedCombination is Bomb ->
                         PlayerPlayedCards(playerId, playedCombination)
 
                     else ->
-                        IllegalAction("Illegal card combination in turn of other player", action)
+                        IllegalAction("Illegal card combination in turn of other player", playerId, action)
                 }
             }
 
             action is CallTaiPan ->
                 when {
                     taiPannedPlayers.containsKey(playerId) ->
-                        IllegalAction("Already tai panned", action)
+                        IllegalAction("Already tai panned", playerId, action)
 
                     playerCards.getValue(playerId).size < 14 ->
-                        IllegalAction("Already played a card", action)
+                        IllegalAction("Already played a card", playerId, action)
 
                     else ->
                         PlayerTaiPanned(playerId, TaiPanStatus.NORMAL)
                 }
 
             else ->
-                IllegalAction("Illegal move", action)
+                IllegalAction("Illegal move", playerId, action)
         }
 
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
@@ -645,9 +645,9 @@ data class TaiPanDragonPass(
         when (event) {
             is PlayerPassedDragon ->
                 trick.copy(
-                    roundCards = trick.roundCards + mapOf(dragonPassTargetPlayer(event.playerId, event.dragonPass) to trick.trickCards),
+                    roundCards = trick.roundCards + mapOf(dragonPassTargetPlayer(event.player, event.dragonPass) to trick.trickCards),
                     trickCards = emptySet(),
-                    currentPlayer = event.playerId,
+                    currentPlayer = event.player,
                     trickIndex = trick.trickIndex + 1,
                     lastPlayedCards = null,
                     folds = 0,
@@ -663,7 +663,7 @@ data class TaiPanDragonPass(
                 PlayerPassedDragon(playerId, action.dragonPass)
 
             else ->
-                IllegalAction("Not allowed", action)
+                IllegalAction("Not allowed", playerId, action)
         }
 
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =

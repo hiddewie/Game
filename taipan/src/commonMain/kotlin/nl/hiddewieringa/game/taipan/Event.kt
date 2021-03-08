@@ -13,48 +13,110 @@ import nl.hiddewieringa.game.taipan.card.ThreeWayPass
 sealed class TaiPanEvent : Event
 
 @Serializable
-data class CardsHaveBeenDealt(override val player: TwoTeamPlayerId, val cards: CardSet) : TaiPanEvent(), PlayerSpecific
-
-// TODO rename -> exchanged
-@Serializable
-data class CardsHaveBeenPassed(override val player: TwoTeamPlayerId, val pass: ThreeWayPass) : TaiPanEvent(), PlayerSpecific
-
-@Serializable
-object AllPlayersHaveReceivedCards : TaiPanEvent()
-
-@Serializable
-object AllPlayersHavePassedCards : TaiPanEvent()
+data class CardsHaveBeenDealt(override val player: TwoTeamPlayerId, val cards: CardSet) : TaiPanEvent(), PlayerSpecific {
+    override fun toString(): String = when (cards.size) {
+        8 -> "Player $player received the first eight cards."
+        6 -> "Player $player received the next six cards."
+        else -> "Player $player received ${cards.size} cards."
+    }
+}
 
 @Serializable
-data class PlayerPlayedCards(val player: TwoTeamPlayerId, val cards: CardCombination, val mahjongRequest: MahjongRequest? = null) : TaiPanEvent()
+data class CardsHaveBeenExchanged(override val player: TwoTeamPlayerId, val pass: ThreeWayPass) : TaiPanEvent(), PlayerSpecific {
+    override fun toString(): String =
+        "Player $player exchanged cards."
+}
 
 @Serializable
-data class PlayerFolds(val player: TwoTeamPlayerId) : TaiPanEvent()
+object AllPlayersHaveReceivedCards : TaiPanEvent() {
+    override fun toString(): String =
+        "All players have received their cards."
+}
 
 @Serializable
-data class DragonTrickWon(val player: TwoTeamPlayerId) : TaiPanEvent()
+object AllPlayersHaveExchangedCards : TaiPanEvent() {
+    override fun toString(): String =
+        "All players have exchanged their cards."
+}
 
 @Serializable
-data class TrickWon(val playerToReceiveTrickCards: TwoTeamPlayerId, val nextPlayer: TwoTeamPlayerId) : TaiPanEvent()
+data class PlayerPlayedCards(val player: TwoTeamPlayerId, val cards: CardCombination, val mahjongRequest: MahjongRequest? = null) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player has played cards $cards ${mahjongRequest?.toString() ?: "without a Mahjong wish"}."
+}
 
 @Serializable
-data class RoundEnded(val roundIndex: Int, val roundScore: Map<TwoTeamTeamId, Int>) : TaiPanEvent()
-data class MahjongWishRequested(val value: Int) : TaiPanEvent()
+data class PlayerFolds(val player: TwoTeamPlayerId) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player folds."
+}
 
 @Serializable
-object MahjongWishFulfilled : TaiPanEvent()
+data class DragonTrickWon(val player: TwoTeamPlayerId) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player won the trick."
+}
 
 @Serializable
-data class PlayerIsOutOfCards(val player: TwoTeamPlayerId) : TaiPanEvent()
+data class TrickWon(val playerToReceiveTrickCards: TwoTeamPlayerId, val nextPlayer: TwoTeamPlayerId) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $playerToReceiveTrickCards won the trick.${if (playerToReceiveTrickCards != nextPlayer) " Next player: $nextPlayer." else ""}"
+}
 
 @Serializable
-data class IllegalAction(val message: String, val action: TaiPanPlayerActions) : TaiPanEvent()
+data class RoundEnded(val roundIndex: Int, val roundScore: Map<TwoTeamTeamId, Int>) : TaiPanEvent() {
+    override fun toString(): String =
+        "Round $roundIndex ended. Score: team 1: ${roundScore.getValue(TwoTeamTeamId.TEAM1)}, team 2: ${roundScore.getValue(TwoTeamTeamId.TEAM2)}."
+}
+
+data class MahjongWishRequested(val value: Int) : TaiPanEvent() {
+    override fun toString(): String =
+        "Mahjong wish $value."
+}
 
 @Serializable
-data class PlayerTaiPanned(val playerId: TwoTeamPlayerId, val status: TaiPanStatus) : TaiPanEvent()
+object MahjongWishFulfilled : TaiPanEvent() {
+    override fun toString(): String =
+        "Mahjong wish has been fulfilled."
+}
 
 @Serializable
-data class PlayerPassedDragon(val playerId: TwoTeamPlayerId, val dragonPass: DragonPass) : TaiPanEvent()
+data class PlayerIsOutOfCards(val player: TwoTeamPlayerId) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player is out of cards."
+}
 
 @Serializable
-data class GameEnded(val winningTeam: TwoTeamTeamId) : TaiPanEvent()
+data class IllegalAction(val message: String, val player: TwoTeamPlayerId, val action: TaiPanPlayerActions) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player tried to perform an illegal action, '$message'."
+}
+
+@Serializable
+data class PlayerTaiPanned(val player: TwoTeamPlayerId, val status: TaiPanStatus) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player Tai Panned: ${status.text()} Tai Pan!"
+
+    private fun TaiPanStatus.text() = when (this) {
+        TaiPanStatus.GREAT -> "great"
+        TaiPanStatus.NORMAL -> "normal"
+    }
+}
+
+@Serializable
+data class PlayerPassedDragon(val player: TwoTeamPlayerId, val dragonPass: DragonPass) : TaiPanEvent() {
+    override fun toString(): String =
+        "Player $player passed the dragon to the ${dragonPass.text()}."
+
+    private fun DragonPass.text() = when (this) {
+        DragonPass.LEFT -> "left"
+        DragonPass.RIGHT -> "right"
+    }
+}
+
+@Serializable
+data class GameEnded(val winningTeam: TwoTeamTeamId) : TaiPanEvent() {
+    override fun toString(): String =
+        "Game has ended, team $winningTeam won!"
+}
+

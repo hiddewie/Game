@@ -57,12 +57,12 @@ class TaiPanTest {
             playerGameChannel.send(PLAYER4 to CardPass(ThreeWayPass(3 of HEARTS, QUEEN of CLUBS, 6 of HEARTS)))
             playerGameChannel.send(PLAYER3 to CardPass(ThreeWayPass(2 of HEARTS, JACK of DIAMONDS, 6 of SPADES)))
 
-            assertAllPlayersNext(CardsHaveBeenPassed::class)
-            assertAllPlayersNext(CardsHaveBeenPassed::class)
-            assertAllPlayersNext(CardsHaveBeenPassed::class)
-            assertAllPlayersNext(CardsHaveBeenPassed::class)
+            assertAllPlayersNext(CardsHaveBeenExchanged::class)
+            assertAllPlayersNext(CardsHaveBeenExchanged::class)
+            assertAllPlayersNext(CardsHaveBeenExchanged::class)
+            assertAllPlayersNext(CardsHaveBeenExchanged::class)
 
-            assertAllPlayersNext(AllPlayersHavePassedCards::class)
+            assertAllPlayersNext(AllPlayersHaveExchangedCards::class)
 
             playerGameChannel.send(
                 PLAYER4 to PlayCards(

@@ -21,7 +21,7 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
                     is CardsHaveBeenDealt -> {
                         hand = event.cards
                     }
-                    is CardsHaveBeenPassed -> {
+                    is CardsHaveBeenExchanged -> {
                     }
                     is PlayerPlayedCards -> {
                         lastPlayedCards = event.cards
@@ -43,7 +43,7 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
                     is GameEnded -> {
                     }
                     AllPlayersHaveReceivedCards -> {}
-                    AllPlayersHavePassedCards -> {}
+                    AllPlayersHaveExchangedCards -> {}
                     is DragonTrickWon -> {}
                     is PlayerIsOutOfCards -> {}
                     is IllegalAction -> {}

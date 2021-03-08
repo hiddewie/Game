@@ -36,7 +36,7 @@ data class WrappedAction<A : PlayerActions>(val action: A)
 
 // TODO make playerId to 'metadata' object
 @Serializable
-data class WrappedEvent<E : Event, S : Any, PID : PlayerId>(val event: E?, val state: S, val playerId: PID)
+data class WrappedEvent<E : Event, S : Any, PID : PlayerId>(val event: E?, val eventDescription: String?, val state: S, val playerId: PID)
 
 @Component
 class WebSocketController(
@@ -92,15 +92,15 @@ class WebSocketController(
             .doFinally { playerSlot.decreaseReference() }
     }
 
-    private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.eventMessage(data: E, state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<E, S, PID>>) =
-        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(data, state, playerId)))
+    private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.eventMessage(event: E, state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<E, S, PID>>) =
+        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(event, event.toString(), state, playerId)))
 
     // TODO add exception handling and send message when something is wrong with the payload.
     private fun <A : PlayerActions> readAction(message: WebSocketMessage, actionSerializer: KSerializer<A>) =
         serializer.decodeFromString(WrappedAction.serializer(actionSerializer), message.payloadAsText).action
 
     private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.stateMessage(state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<E, S, PID>>) =
-        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, state, playerId)))
+        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, null, state, playerId)))
 
     companion object {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"

@@ -214,6 +214,7 @@ val serializer = Json {}
 @Serializable
 class StateEvent<E : Event?, S : Any>(
     val event: E?,
+    val eventDescription: String?,
     val state: S,
     val playerId: String?,
 )
@@ -268,15 +269,15 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         }
         socket.onmessage = {
             val stateEvent = serializer.decodeFromString(StateEvent.serializer(eventSerializer, stateSerializer), it.data.unsafeCast<String>())
-            console.log("message", it.data, "event", stateEvent.event, "state", stateEvent.state, "player", stateEvent.playerId)
+            console.log("message", it.data, "event", stateEvent.eventDescription, "state", stateEvent.state, "player", stateEvent.playerId)
             setGameState(stateEvent.state)
             setPlayerId(stateEvent.playerId)
-            if (stateEvent.event != null) {
-                addGameEvent(stateEvent.event.toString())
+            if (stateEvent.eventDescription != null) {
+                addGameEvent(stateEvent.eventDescription)
             }
         }
         socket.onerror = {
-            console.info("error", it)
+            console.error("error", it)
         }
 
         webSocket.current = socket
