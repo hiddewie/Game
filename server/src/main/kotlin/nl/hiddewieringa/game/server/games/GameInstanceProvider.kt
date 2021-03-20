@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -72,9 +73,10 @@ class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any>
 @Component
 class GameInstanceProvider(
     private val gameManager: GameManager,
+    private val coroutineScope: CoroutineScope,
 ) {
 
-    private val instances: MutableMap<UUID, GameInstance<*, *, *, *>> = mutableMapOf()
+    private val instances: MutableMap<UUID, GameInstance<*, *, *, *>> = ConcurrentHashMap()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
     suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
@@ -86,24 +88,25 @@ class GameInstanceProvider(
         // We need a reference to the players for exposing the channels
         val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, PS>() as P })
 
+        // TODO simplify: less factories, more concrete arguments
         val gameJob = gameManager.play(
-            GlobalScope, // TODO should this be a specific scope (?)
+            coroutineScope,
             gameDetails.gameFactory,
             { playerConfiguration },
             parameters,
             gameDetails.playerState,
         )
-        val startedJob = gameJob
 
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
-        // TODO use bean defined scope
-        GlobalScope.async(threadPoolDispatcher) {
-            val gameResult = startedJob.await()
+        coroutineScope.async(threadPoolDispatcher) {
+            val gameResult = gameJob.await()
 
             // TODO store game result
-            println("Game result of $instanceId: $gameResult")
+            println("Game result of $instanceId: $gameResult.")
+            instances.remove(instanceId)
+            logger.info("Removed game instance $instanceId (active games ${instances.size}).")
         }
 
         val playerSlots = playerConfiguration.associate { playerId ->
@@ -119,13 +122,13 @@ class GameInstanceProvider(
             instanceId,
             gameDetails.slug,
             playerSlots,
-            { playerId: PID -> gameDetails.playerState.invoke(startedJob.stateSupplier(), playerId) },
+            { playerId: PID -> gameDetails.playerState.invoke(gameJob.stateSupplier(), playerId) },
             gameDetails.actionSerializer,
             gameDetails.eventSerializer,
             gameDetails.stateSerializer,
             gameDetails.playerIdSerializer,
         )
-        logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots")
+        logger.info("Created instance $instanceId with ${playerSlots.size} playerSlots (active games ${instances.size}).")
 
         return instanceId
     }

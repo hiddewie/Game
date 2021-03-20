@@ -1,6 +1,6 @@
 package nl.hiddewieringa.game.server.controller
 
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
@@ -34,17 +34,16 @@ private val logger = KotlinLogging.logger {}
 @Serializable
 data class WrappedAction<A : PlayerActions>(val action: A)
 
-// TODO make playerId to 'metadata' object
 @Serializable
-data class WrappedEvent<E : Event, S : Any, PID : PlayerId>(val event: E?, val eventDescription: String?, val state: S, val playerId: PID)
+data class WrappedEvent<S : Any, PID : PlayerId>(val eventDescription: String?, val state: S, val playerId: PID)
 
 @Component
 class WebSocketController(
     val gameInstanceProvider: GameInstanceProvider,
+    val coroutineScope: CoroutineScope,
 ) : WebSocketHandler {
 
     private val template = UriTemplate(URI_TEMPLATE)
-
     private val serializer = Json {}
 
     override fun handle(session: WebSocketSession): Mono<Void> {
@@ -72,7 +71,7 @@ class WebSocketController(
         playerSlot.increaseReference()
 
         // TODO: other scope? create our own scope that is coupled with bean lifetime
-        GlobalScope.launch {
+        coroutineScope.launch {
             session.receive()
                 // Messages must be retained to make Netty not lose it due to 0 message reference count
                 .map(WebSocketMessage::retain)
@@ -80,7 +79,7 @@ class WebSocketController(
                 .collect { playerSlot.sendChannel.send(readAction(it, gameInstance.actionSerializer)) }
         }
 
-        val wrappedEventSerializer = WrappedEvent.serializer(gameInstance.eventSerializer, gameInstance.stateSerializer, gameInstance.playerIdSerializer)
+        val wrappedEventSerializer = WrappedEvent.serializer(gameInstance.stateSerializer, gameInstance.playerIdSerializer)
 
         // The initial state is published directly
         val initialStateFlux = Flux.just(session.stateMessage(gameInstance.playerState(playerSlotId), playerSlot.playerId, wrappedEventSerializer))
@@ -92,15 +91,15 @@ class WebSocketController(
             .doFinally { playerSlot.decreaseReference() }
     }
 
-    private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.eventMessage(event: E, state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<E, S, PID>>) =
-        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(event, event.toString(), state, playerId)))
+    private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.eventMessage(event: E, state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =
+        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(event.toString(), state, playerId)))
 
     // TODO add exception handling and send message when something is wrong with the payload.
     private fun <A : PlayerActions> readAction(message: WebSocketMessage, actionSerializer: KSerializer<A>) =
         serializer.decodeFromString(WrappedAction.serializer(actionSerializer), message.payloadAsText).action
 
-    private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.stateMessage(state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<E, S, PID>>) =
-        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, null, state, playerId)))
+    private fun <S : Any, PID : PlayerId> WebSocketSession.stateMessage(state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =
+        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, state, playerId)))
 
     companion object {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"

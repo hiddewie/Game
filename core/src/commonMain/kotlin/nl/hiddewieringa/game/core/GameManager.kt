@@ -21,8 +21,16 @@ class StatefulJob<S : GameState<S>>(
  */
 class GameManager {
 
-    suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS>
-    play(
+    suspend fun <
+        M : GameParameters,
+        P : Player<M, E, A, PID, PS>,
+        A : PlayerActions,
+        E : Event,
+        PID : PlayerId,
+        PC : PlayerConfiguration<PID, P>,
+        S : GameState<S>,
+        PS
+        > play(
         scope: CoroutineScope,
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
@@ -35,9 +43,7 @@ class GameManager {
         val gameReceiveChannel = Channel<Pair<PID, A>>(capacity = UNLIMITED)
         val gameSendChannel = Channel<Triple<PID, E, PS>>(capacity = UNLIMITED)
 
-        val playerChannels = players.allPlayers
-            .map { playerId -> playerId to Channel<Pair<E, PS>>(capacity = UNLIMITED) }
-            .toMap()
+        val playerChannels = players.allPlayers.associateWith { Channel<Pair<E, PS>>(capacity = UNLIMITED) }
 
         scope.launch {
             gameSendChannel.consumeEach {

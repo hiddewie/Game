@@ -119,4 +119,3 @@ data class GameEnded(val winningTeam: TwoTeamTeamId) : TaiPanEvent() {
     override fun toString(): String =
         "Game has ended, team $winningTeam won!"
 }
-

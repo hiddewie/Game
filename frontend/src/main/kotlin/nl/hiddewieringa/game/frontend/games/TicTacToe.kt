@@ -40,11 +40,11 @@ val TicTacToeComponent = functionalComponent<GameUiProps<TicTacToePlayerState, T
                 textAlign = TextAlign.center
             }
 
-            if (playerWon != null) {
-                if (playerWon.toString() == playerId) {
-                    +"You won!"
-                } else {
-                    +"$playerWon won!"
+            if (gameFinished) {
+                +when {
+                    playerWon == null -> "Nobody won: drow"
+                    playerWon.toString() == playerId -> "You won!"
+                    else -> "$playerWon won!"
                 }
             } else if (playerToPlay != null) {
                 if (playerToPlay.toString() == playerId) {

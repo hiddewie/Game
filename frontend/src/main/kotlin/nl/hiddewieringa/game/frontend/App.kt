@@ -212,8 +212,7 @@ external interface GamePlay : GameSlug {
 val serializer = Json {}
 
 @Serializable
-class StateEvent<E : Event?, S : Any>(
-    val event: E?,
+class StateEvent<S : Any>(
     val eventDescription: String?,
     val state: S,
     val playerId: String?,
@@ -246,11 +245,6 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
 
     val webSocket = useRef<WebSocket?>(null)
 
-    val eventSerializer = when (gameSlug) {
-        "tic-tac-toe" -> TicTacToeEvent.serializer()
-        "tai-pan" -> TaiPanEvent.serializer()
-        else -> throw IllegalStateException("Unknown game slug $gameSlug")
-    }
     val stateSerializer = when (gameSlug) {
         "tic-tac-toe" -> TicTacToePlayerState.serializer()
         "tai-pan" -> TaiPanPlayerState.serializer()
@@ -268,7 +262,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
             setConnected(false)
         }
         socket.onmessage = {
-            val stateEvent = serializer.decodeFromString(StateEvent.serializer(eventSerializer, stateSerializer), it.data.unsafeCast<String>())
+            val stateEvent = serializer.decodeFromString(StateEvent.serializer(stateSerializer), it.data.unsafeCast<String>())
             console.log("message", it.data, "event", stateEvent.eventDescription, "state", stateEvent.state, "player", stateEvent.playerId)
             setGameState(stateEvent.state)
             setPlayerId(stateEvent.playerId)

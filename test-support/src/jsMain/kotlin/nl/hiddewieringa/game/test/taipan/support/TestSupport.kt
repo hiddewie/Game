@@ -1,4 +1,4 @@
-package nl.hiddewieringa.game.taipan.support
+package nl.hiddewieringa.game.test.taipan.support
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope

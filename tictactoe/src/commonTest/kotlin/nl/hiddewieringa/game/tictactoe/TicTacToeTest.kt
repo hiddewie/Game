@@ -8,7 +8,9 @@ import nl.hiddewieringa.game.core.Player
 import nl.hiddewieringa.game.core.TwoPlayerId
 import nl.hiddewieringa.game.core.TwoPlayers
 import nl.hiddewieringa.game.taipan.support.runTest
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class TicTacToeTest {
 
