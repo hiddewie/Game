@@ -12,6 +12,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
     private val playerIds: Set<PID>,
     initialState: S,
     private val playerChannel: SendChannel<Triple<PID, E, PS>>,
+    private val stateChannel: SendChannel<S>,
     private val playerActions: ReceiveChannel<Pair<PID, A>>,
     private val playerState: S.(PID) -> PS,
 ) {
@@ -20,6 +21,9 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
 
     suspend fun playGame(): S {
         println("Starting game loop")
+
+        stateChannel.send(state)
+
         var loop = 0
         while (loop < 1000) {
             println("Game loop: state $state")
@@ -36,6 +40,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
                         println("Game loop: Decision generated event $decisionEvent")
 
                         state = (currentState as IntermediateGameState<PID, A, E, S>).applyEvent(decisionEvent)
+                        stateChannel.send(state)
 
                         playerIds.forEach { playerId ->
                             playerChannel.send(Triple(playerId, decisionEvent, state.playerState(playerId)))
@@ -51,6 +56,7 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
 
                         println("Game loop: Action caused $event")
                         state = (currentState as IntermediateGameState<PID, A, E, S>).applyEvent(event)
+                        stateChannel.send(state)
 
                         playerIds.forEach { playerId ->
                             playerChannel.send(Triple(playerId, event, state.playerState(playerId)))

@@ -15,7 +15,7 @@ import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.KING
 import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.QUEEN
 import nl.hiddewieringa.game.taipan.card.Suit.*
 import nl.hiddewieringa.game.taipan.player.SimpleTaiPanPlayer
-import nl.hiddewieringa.game.taipan.support.runTest
+import nl.hiddewieringa.game.test.taipan.support.runTest
 import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -345,7 +345,7 @@ class TaiPanTest {
 
         launch {
             withTimeout(2.seconds) {
-                val gameResult = GameContext(players, game, gamePlayerChannel, playerGameChannel, { this }).playGame()
+                val gameResult = GameContext(players, game, gamePlayerChannel, Channel(), playerGameChannel, { this }).playGame()
                 assertEquals(TaiPanFinalScore(TwoTeamTeamId.TEAM2, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)), gameResult)
             }
         }

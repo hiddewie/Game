@@ -24,7 +24,7 @@ class TicTacToePlay(
 
     override fun applyEvent(event: TicTacToeEvent): TicTacToeState =
         when (event) {
-            IllegalMove -> when (playerToPlay) {
+            is IllegalMove -> when (event.player) {
                 TwoPlayerId.PLAYER1 -> PlayerWon(board, TwoPlayerId.PLAYER2)
                 TwoPlayerId.PLAYER2 -> PlayerWon(board, TwoPlayerId.PLAYER1)
             }
@@ -53,7 +53,7 @@ class TicTacToePlay(
                 val played = action.location
                 println("Player $playerId played $played")
                 if (board[played.x][played.y] != null) {
-                    IllegalMove
+                    IllegalMove(playerId)
                 } else {
                     val mark = markForPlayer(playerId)
                     PlayerPlacedMark(playerId, mark, played)
@@ -61,7 +61,7 @@ class TicTacToePlay(
             }
 
             else ->
-                IllegalMove
+                IllegalMove(playerId)
         }
 
     override val gameDecisions: List<GameDecision<TicTacToeEvent>> =
@@ -131,7 +131,7 @@ sealed class TicTacToeEvent : Event
 data class PlayerPlacedMark(val player: TwoPlayerId, val mark: GameMark, val location: Location) : TicTacToeEvent()
 
 @Serializable
-object IllegalMove : TicTacToeEvent()
+data class IllegalMove(val player: TwoPlayerId) : TicTacToeEvent()
 
 @Serializable
 data class GameEnded(val playerWon: TwoPlayerId?) : TicTacToeEvent()

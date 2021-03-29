@@ -1,5 +1,6 @@
 package nl.hiddewieringa.game.tictactoe
 
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
@@ -7,7 +8,7 @@ import nl.hiddewieringa.game.core.GameManager
 import nl.hiddewieringa.game.core.Player
 import nl.hiddewieringa.game.core.TwoPlayerId
 import nl.hiddewieringa.game.core.TwoPlayers
-import nl.hiddewieringa.game.taipan.support.runTest
+import nl.hiddewieringa.game.test.taipan.support.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -19,7 +20,6 @@ class TicTacToeTest {
         val gameManager = GameManager()
 
         val gameResult = gameManager.play(
-            this,
             { TicTacToePlay() },
             {
                 TwoPlayers(
@@ -29,7 +29,8 @@ class TicTacToeTest {
             },
             TicTacToeGameParameters,
             { this },
-        ).await()
+            Channel(),
+        )
 
         assertTrue(gameResult is NoPlayerWon)
     }
@@ -39,7 +40,6 @@ class TicTacToeTest {
         val gameManager = GameManager()
 
         val gameResult = gameManager.play(
-            this,
             { TicTacToePlay() },
             {
                 TwoPlayers(
@@ -49,7 +49,8 @@ class TicTacToeTest {
             },
             TicTacToeGameParameters,
             { this },
-        ).await()
+            Channel(),
+        )
 
         assertTrue(gameResult is PlayerWon)
         assertEquals(TwoPlayerId.PLAYER2, gameResult.player)
@@ -60,7 +61,6 @@ class TicTacToeTest {
         val gameManager = GameManager()
 
         val gameResult = gameManager.play(
-            this,
             { TicTacToePlay() },
             {
                 TwoPlayers(
@@ -70,7 +70,8 @@ class TicTacToeTest {
             },
             TicTacToeGameParameters,
             { this },
-        ).await()
+            Channel(),
+        )
 
         assertTrue(gameResult is PlayerWon)
         assertEquals(TwoPlayerId.PLAYER1, gameResult.player)

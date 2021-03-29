@@ -8,8 +8,8 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs = freeCompilerArgs + listOf(
-                    "-Xuse-experimental=kotlin.time.ExperimentalTime",
-                    "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
+                    "-Xopt-in=kotlin.time.ExperimentalTime",
+                    "-Xopt-in=kotlin.ExperimentalStdlibApi"
                 )
             }
         }

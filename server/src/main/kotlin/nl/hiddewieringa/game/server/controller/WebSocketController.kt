@@ -1,11 +1,13 @@
 package nl.hiddewieringa.game.server.controller
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -25,7 +27,6 @@ import org.springframework.web.reactive.socket.WebSocketHandler
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriTemplate
-import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.*
 
@@ -40,7 +41,6 @@ data class WrappedEvent<S : Any, PID : PlayerId>(val eventDescription: String?, 
 @Component
 class WebSocketController(
     val gameInstanceProvider: GameInstanceProvider,
-    val coroutineScope: CoroutineScope,
 ) : WebSocketHandler {
 
     private val template = UriTemplate(URI_TEMPLATE)
@@ -70,8 +70,7 @@ class WebSocketController(
     private fun <A : PlayerActions, E : Event, S : Any, PID : PlayerId> handle(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<A, E, S, PID>, playerSlot: PlayerSlot<A, E, S, PID>): Mono<Void> {
         playerSlot.increaseReference()
 
-        // TODO: other scope? create our own scope that is coupled with bean lifetime
-        coroutineScope.launch {
+        CoroutineScope(Dispatchers.Default).launch {
             session.receive()
                 // Messages must be retained to make Netty not lose it due to 0 message reference count
                 .map(WebSocketMessage::retain)
@@ -82,8 +81,11 @@ class WebSocketController(
         val wrappedEventSerializer = WrappedEvent.serializer(gameInstance.stateSerializer, gameInstance.playerIdSerializer)
 
         // The initial state is published directly
-        val initialStateFlux = Flux.just(session.stateMessage(gameInstance.playerState(playerSlotId), playerSlot.playerId, wrappedEventSerializer))
         // TODO modify events to be player specific, cleaned of information not destined for a player
+        val initialStateFlux = mono {
+            val initialState = gameInstance.playerState(playerSlotId)
+            session.stateMessage(initialState, playerSlot.playerId, wrappedEventSerializer)
+        }
         val events = playerSlot.receiveChannel.receiveAsFlow().asFlux()
             .map { (event, state) -> session.eventMessage(event, state, playerSlot.playerId, wrappedEventSerializer) }
 

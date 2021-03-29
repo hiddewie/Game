@@ -23,12 +23,12 @@ class PlayerSlot<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
 
     fun increaseReference() {
         referenceCount.incrementAndGet()
-        logger.info("player slot ${referenceCount.get()}")
+        logger.info("player slot $playerId ${referenceCount.get()}")
     }
 
     fun decreaseReference() {
         referenceCount.decrementAndGet()
-        logger.info("player slot ${referenceCount.get()}")
+        logger.info("player slot $playerId ${referenceCount.get()}")
     }
 }
 
@@ -37,7 +37,7 @@ class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val id: UUID,
     val gameSlug: String,
     val playerSlots: Map<UUID, PlayerSlot<A, E, S, PID>>,
-    val stateProvider: (PID) -> S,
+    val stateProvider: suspend (PID) -> S,
     val actionSerializer: KSerializer<A>,
     val eventSerializer: KSerializer<E>,
     val stateSerializer: KSerializer<S>,
@@ -46,7 +46,7 @@ class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val open: Boolean
         get() = playerSlots.values.any { it.referenceCount.get() == 0 }
 
-    fun playerState(playerSlotId: UUID): S =
+    suspend fun playerState(playerSlotId: UUID): S =
         stateProvider(playerSlots.getValue(playerSlotId).playerId)
 }
 
@@ -70,17 +70,29 @@ class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any>
         }
 }
 
+sealed class GameStateRequest<S : GameState<S>>
+data class UpdateState<S : GameState<S>>(val state: S) : GameStateRequest<S>()
+data class GetState<S : GameState<S>>(val response: CompletableDeferred<S>) : GameStateRequest<S>()
+
 @Component
 class GameInstanceProvider(
     private val gameManager: GameManager,
-    private val coroutineScope: CoroutineScope,
 ) {
 
     private val instances: MutableMap<UUID, GameInstance<*, *, *, *>> = ConcurrentHashMap()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
-    suspend fun <M : GameParameters, P : Player<M, E, A, PID, PS>, A : PlayerActions, E : Event, PID : PlayerId, PC : PlayerConfiguration<PID, P>, S : GameState<S>, PS : Any>
+    suspend fun <
+        M : GameParameters,
+        P : Player<M, E, A, PID, PS>,
+        A : PlayerActions,
+        E : Event,
+        PID : PlayerId,
+        PC : PlayerConfiguration<PID, P>,
+        S : GameState<S>, PS : Any
+        >
     start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
+        val coroutineScope = CoroutineScope(threadPoolDispatcher)
 
         val instanceId = UUID.randomUUID()
         val parameters = gameDetails.defaultParameters
@@ -88,25 +100,28 @@ class GameInstanceProvider(
         // We need a reference to the players for exposing the channels
         val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, PS>() as P })
 
-        // TODO simplify: less factories, more concrete arguments
-        val gameJob = gameManager.play(
-            coroutineScope,
-            gameDetails.gameFactory,
-            { playerConfiguration },
-            parameters,
-            gameDetails.playerState,
-        )
-
-        // Use the global scope to launch a
-        //   WITHOUT waiting for the result of the game
-        //   using the thread pool for running games.
-        coroutineScope.async(threadPoolDispatcher) {
-            val gameResult = gameJob.await()
-
-            // TODO store game result
-            println("Game result of $instanceId: $gameResult.")
-            instances.remove(instanceId)
-            logger.info("Removed game instance $instanceId (active games ${instances.size}).")
+        val stateUpdateChannel = Channel<S>()
+        val playerStateActor = coroutineScope.actor<GameStateRequest<S>> {
+            var state: S? = null
+            for (msg in channel) {
+                when (msg) {
+                    is UpdateState ->
+                        state = msg.state
+                    is GetState ->
+                        if (state != null) {
+                            msg.response.complete(state)
+                        } else {
+                            msg.response.completeExceptionally(IllegalStateException("Actor state not initialized yet"))
+                        }
+                }
+            }
+        }
+        val stateJob = coroutineScope.launch {
+            logger.info("State update channel start consume")
+            stateUpdateChannel.consumeEach { state ->
+                playerStateActor.send(UpdateState(state))
+            }
+            logger.info("State update channel end consume")
         }
 
         val playerSlots = playerConfiguration.associate { playerId ->
@@ -118,11 +133,41 @@ class GameInstanceProvider(
             )
         }
 
+        // Use the global scope to launch a
+        //   WITHOUT waiting for the result of the game
+        //   using the thread pool for running games.
+        val job = coroutineScope.launch {
+            // TODO simplify: less factories, more concrete arguments
+            val gameResult = gameManager.play(
+                gameDetails.gameFactory,
+                { playerConfiguration },
+                parameters,
+                gameDetails.playerState,
+                stateUpdateChannel,
+            )
+
+            // TODO store game result
+            logger.info("Game result of $instanceId: $gameResult.")
+            instances.remove(instanceId)
+            playerStateActor.close()
+            stateJob.cancel()
+            playerConfiguration.allPlayers.forEach {
+                (playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>).actionChannel.close()
+                (playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>).eventChannel.close()
+            }
+            logger.info("Removed game instance $instanceId (active games ${instances.size}).")
+        }
+
         instances[instanceId] = GameInstance(
             instanceId,
             gameDetails.slug,
             playerSlots,
-            { playerId: PID -> gameDetails.playerState.invoke(gameJob.stateSupplier(), playerId) },
+            { playerId: PID ->
+                val deferredResult = CompletableDeferred<S>()
+                playerStateActor.send(GetState(deferredResult))
+                val result = deferredResult.await()
+                gameDetails.playerState.invoke(result, playerId)
+            },
             gameDetails.actionSerializer,
             gameDetails.eventSerializer,
             gameDetails.stateSerializer,

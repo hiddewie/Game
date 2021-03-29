@@ -12,7 +12,8 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs = freeCompilerArgs + listOf(
-                    "-Xuse-experimental=kotlinx.coroutines.ExperimentalCoroutinesApi"
+                    "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                    "-Xopt-in=kotlinx.coroutines.ObsoleteCoroutinesApi"
                 )
             }
         }
