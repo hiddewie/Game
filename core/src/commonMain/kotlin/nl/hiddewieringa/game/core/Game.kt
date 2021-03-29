@@ -21,7 +21,6 @@ class GameContext<A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>
 
     suspend fun playGame(): S {
         println("Starting game loop")
-
         stateChannel.send(state)
 
         var loop = 0

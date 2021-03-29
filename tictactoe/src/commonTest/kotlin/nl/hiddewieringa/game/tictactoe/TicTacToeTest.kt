@@ -29,7 +29,7 @@ class TicTacToeTest {
             },
             TicTacToeGameParameters,
             { this },
-            Channel(),
+            Channel(capacity = Channel.UNLIMITED),
         )
 
         assertTrue(gameResult is NoPlayerWon)
@@ -49,7 +49,7 @@ class TicTacToeTest {
             },
             TicTacToeGameParameters,
             { this },
-            Channel(),
+            Channel(capacity = Channel.UNLIMITED),
         )
 
         assertTrue(gameResult is PlayerWon)
@@ -70,7 +70,7 @@ class TicTacToeTest {
             },
             TicTacToeGameParameters,
             { this },
-            Channel(),
+            Channel(capacity = Channel.UNLIMITED),
         )
 
         assertTrue(gameResult is PlayerWon)
