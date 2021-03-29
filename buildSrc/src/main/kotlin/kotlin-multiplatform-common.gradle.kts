@@ -26,9 +26,7 @@ kotlin {
     js(IR) {
         browser {
             testTask {
-                useKarma {
-                    useFirefoxHeadless()
-                }
+                useMocha()
             }
         }
         binaries.executable()
