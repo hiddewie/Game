@@ -5,8 +5,8 @@ plugins {
 
     id("org.springframework.boot") version "2.4.1"
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
-    kotlin("plugin.spring") version "1.4.21"
-    kotlin("plugin.serialization") version "1.4.21"
+    kotlin("plugin.spring") version "1.4.31"
+    kotlin("plugin.serialization") version "1.4.31"
 }
 
 group = "nl.hiddewieringa.game"
