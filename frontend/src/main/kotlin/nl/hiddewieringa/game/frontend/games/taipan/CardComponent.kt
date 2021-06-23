@@ -51,6 +51,7 @@ external interface PartialCardProps : RProps {
 
 external interface CardProps : PartialCardProps {
     var card: Card
+    var canSelect: Boolean
     var selected: Boolean
     var cardSelected: () -> Unit
     var cardDeselected: () -> Unit
@@ -87,11 +88,13 @@ val CardComponent = functionalComponent<CardProps> { props ->
         css(cardCssRuleSet(props.small, props.selected, props.hoverControls != null))
 
         attrs.classes = setOf(cardClass)
-        attrs.onClickFunction = {
-            if (props.selected) {
-                props.cardDeselected()
-            } else {
-                props.cardSelected()
+        if (props.canSelect) {
+            attrs.onClickFunction = {
+                if (props.selected) {
+                    props.cardDeselected()
+                } else {
+                    props.cardSelected()
+                }
             }
         }
 

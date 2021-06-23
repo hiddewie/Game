@@ -49,10 +49,10 @@ val ExchangeCardsComponent = functionalComponent<ExchangeCardsProps> { props ->
                         attrs.card = left
                         attrs.cardSelected = {}
                         attrs.cardDeselected = {}
+                        attrs.canSelect = false
                     }
                 } else {
                     child(EmptyCardComponent)
-
                 }
             }
             styledDiv {
@@ -65,6 +65,7 @@ val ExchangeCardsComponent = functionalComponent<ExchangeCardsProps> { props ->
                         attrs.card = forward
                         attrs.cardSelected = {}
                         attrs.cardDeselected = {}
+                        attrs.canSelect = false
                     }
                 } else {
                     child(EmptyCardComponent)
@@ -83,6 +84,7 @@ val ExchangeCardsComponent = functionalComponent<ExchangeCardsProps> { props ->
                         attrs.card = right
                         attrs.cardSelected = {}
                         attrs.cardDeselected = {}
+                        attrs.canSelect = false
                     }
                 } else {
                     child(EmptyCardComponent)

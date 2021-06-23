@@ -19,6 +19,7 @@ external interface CardListProps : RProps {
     var small: Boolean
     var cardSelected: (Card) -> Unit
     var cardDeselected: (Card) -> Unit
+    var canSelect: Boolean
 }
 
 val cardListRuleSet: (Float, Boolean) -> RuleSet = { index, large ->
@@ -64,13 +65,14 @@ val CardListComponent = functionalComponent<CardListProps> { props ->
                 attrs.hoverControls = props.hoverControls?.let { controls -> controls(card) }
                 attrs.cardSelected = { props.cardSelected(card) }
                 attrs.cardDeselected = { props.cardDeselected(card) }
+                attrs.canSelect = props.canSelect
             }
 //            }
         }
     }
 
     div {
-        +"${cards.size} cards, ${cards.sumBy { it.points }} points"
+        +"${cards.size} cards, ${cards.sumOf { it.points }} points"
     }
 }
 

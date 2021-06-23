@@ -24,7 +24,8 @@ import styled.styledImg
 external interface PartialPlayerProps : RProps {
     var playerId: TwoTeamPlayerId
     var taiPanned: TaiPanStatus?
-    var shouldPlay: Boolean // TODO modify to exchange controls or to play controls
+    var shouldPlay: Boolean
+    var shouldExchange: Boolean
 }
 
 external interface HiddenPlayerProps : PartialPlayerProps {
@@ -54,7 +55,7 @@ val HiddenPlayerComponent = functionalComponent<HiddenPlayerProps> { props ->
             TaiPanStatus.NORMAL -> "★"
             TaiPanStatus.GREAT -> "★★"
         }
-        +"Player ${props.playerId}: Tai pan: $taiPannedStatus. ${if (props.shouldPlay) "Should play" else "Should not play"}"
+        +"Player ${props.playerId}: Tai pan: $taiPannedStatus. ${if (props.shouldExchange) "Should exchange" else ""} ${if (props.shouldPlay) "Should play" else ""}"
 
         div {
             child(EmptyCardListComponent) {
@@ -67,7 +68,7 @@ val HiddenPlayerComponent = functionalComponent<HiddenPlayerProps> { props ->
 val PlayerComponent = functionalComponent<PlayerProps> { props ->
 
     val hoverControls: ((Card) -> (RBuilder) -> Unit)? =
-        if (props.shouldPlay) {
+        if (props.shouldExchange) {
             { card ->
                 { builder ->
                     builder.span {
@@ -125,7 +126,7 @@ val PlayerComponent = functionalComponent<PlayerProps> { props ->
             TaiPanStatus.NORMAL -> "★"
             TaiPanStatus.GREAT -> "★★"
         }
-        +"Tai pan: $taiPannedStatus. ${if (props.shouldPlay) "Should play" else "Should not play"}"
+        +"Tai pan: $taiPannedStatus. ${if (props.shouldExchange) "Should exchange" else ""} ${if (props.shouldPlay) "Should play" else ""}"
         div {
             button {
                 attrs.classes = setOf("uk-button", "uk-button-primary")
@@ -142,6 +143,7 @@ val PlayerComponent = functionalComponent<PlayerProps> { props ->
                 attrs.selectedCards = props.selectedCards
                 attrs.cardSelected = props.cardSelected
                 attrs.cardDeselected = props.cardDeselected
+                attrs.canSelect = props.shouldPlay
             }
         }
     }

@@ -202,8 +202,15 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                         when (gameState.stateType) {
                             TaiPanPlayerStateType.RECEIVE_CARDS -> {
                                 if (gameState.playersToPlay.contains(playerId)) {
-                                    div {
-                                        +"Receive next cards or tai pan"
+                                    styledDiv {
+                                        css {
+                                            textAlign = TextAlign.center
+                                        }
+
+                                        div {
+                                            attrs.classes = setOf("uk-alert", "uk-alert-primary")
+                                            +"Receive next cards or tai pan"
+                                        }
                                         button {
                                             attrs.classes = setOf("uk-button", "uk-button-primary")
                                             attrs.onClickFunction = { requestNextCards() }
@@ -211,7 +218,14 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                         }
                                     }
                                 } else {
-                                    +"Wait for the other players to tai pan or receive their cards"
+                                    styledDiv {
+                                        css {
+                                            textAlign = TextAlign.center
+                                        }
+
+                                        attrs.classes = setOf("uk-alert", "uk-alert-primary")
+                                        +"Wait for the other players to tai pan or receive their cards"
+                                    }
                                 }
                             }
                             TaiPanPlayerStateType.EXCHANGE_CARDS -> {
@@ -223,25 +237,43 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                         attrs.exchange = { passCards() }
                                     }
                                 } else {
-                                    +"Wait for the other players to exchange"
+                                    styledDiv {
+                                        css {
+                                            textAlign = TextAlign.center
+                                        }
+
+                                        attrs.classes = setOf("uk-alert", "uk-alert-primary")
+                                        +"Wait for the other players to exchange"
+                                    }
                                 }
                             }
                             TaiPanPlayerStateType.PASS_DRAGON -> {
-                                styledDiv {
-                                    css {
-                                        display = Display.flex
-                                        justifyContent = JustifyContent.spaceBetween
+                                div {
+                                    styledDiv {
+                                        css {
+                                            textAlign = TextAlign.center
+                                        }
+
+                                        attrs.classes = setOf("uk-alert", "uk-alert-primary")
+                                        +"Pass the dragon"
                                     }
 
-                                    button {
-                                        attrs.classes = setOf("uk-button", "uk-button-primary")
-                                        attrs.onClickFunction = { passDragonTrick(DragonPass.LEFT) }
-                                        +"Pass dragon left"
-                                    }
-                                    button {
-                                        attrs.classes = setOf("uk-button", "uk-button-primary")
-                                        attrs.onClickFunction = { passDragonTrick(DragonPass.RIGHT) }
-                                        +"Pass dragon right"
+                                    styledDiv {
+                                        css {
+                                            display = Display.flex
+                                            justifyContent = JustifyContent.spaceBetween
+                                        }
+
+                                        button {
+                                            attrs.classes = setOf("uk-button", "uk-button-primary")
+                                            attrs.onClickFunction = { passDragonTrick(DragonPass.LEFT) }
+                                            +"Pass dragon left"
+                                        }
+                                        button {
+                                            attrs.classes = setOf("uk-button", "uk-button-primary")
+                                            attrs.onClickFunction = { passDragonTrick(DragonPass.RIGHT) }
+                                            +"Pass dragon right"
+                                        }
                                     }
                                 }
                             }
@@ -258,6 +290,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                     attrs.selectedCards = emptySet()
                                     attrs.cardSelected = { }
                                     attrs.cardDeselected = { }
+                                    attrs.canSelect = false
                                 }
 
                                 styledDiv {
@@ -286,6 +319,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                     attrs.hoverControls = null
                                     attrs.cardSelected = { }
                                     attrs.cardDeselected = { }
+                                    attrs.canSelect = false
                                 }
                             }
                         }
