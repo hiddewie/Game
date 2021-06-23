@@ -610,15 +610,15 @@ data class TaiPanPlayTrick(
                 if (outOfCardOrder[0].team == outOfCardOrder[1].team) { // double game
                     scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + 200 }
                 } else {
-                    scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + roundCards.getValue(outOfCardOrder[0]).sumBy { it.points } }
-                    scores.computeIfPresent(outOfCardOrder[1].team) { s -> s + roundCards.getValue(outOfCardOrder[1]).sumBy { it.points } }
-                    scores.computeIfPresent(outOfCardOrder[2].team) { s -> s + roundCards.getValue(outOfCardOrder[2]).sumBy { it.points } }
+                    scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + roundCards.getValue(outOfCardOrder[0]).sumOf { it.points } }
+                    scores.computeIfPresent(outOfCardOrder[1].team) { s -> s + roundCards.getValue(outOfCardOrder[1]).sumOf { it.points } }
+                    scores.computeIfPresent(outOfCardOrder[2].team) { s -> s + roundCards.getValue(outOfCardOrder[2]).sumOf { it.points } }
 
                     val lastPlayer = TwoTeamPlayerId.values().filterNot { outOfCardOrder.contains(it) }[0]
                     // Tricks of last player go to first player.
-                    scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + roundCards.getValue(lastPlayer).sumBy { it.points } }
+                    scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + roundCards.getValue(lastPlayer).sumOf { it.points } }
                     // Hand of last player goes to opposite team
-                    scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + playerCards.getValue(lastPlayer).sumBy { it.points } }
+                    scores.computeIfPresent(outOfCardOrder[0].team) { s -> s + playerCards.getValue(lastPlayer).sumOf { it.points } }
                 }
                 taiPannedPlayers.forEach { (playerId, taiPan) ->
                     scores.computeIfPresent(playerId.team) { s ->

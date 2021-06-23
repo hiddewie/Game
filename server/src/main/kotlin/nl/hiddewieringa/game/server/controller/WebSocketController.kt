@@ -3,7 +3,6 @@ package nl.hiddewieringa.game.server.controller
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
@@ -86,7 +85,7 @@ class WebSocketController(
             val initialState = gameInstance.playerState(playerSlotId)
             session.stateMessage(initialState, playerSlot.playerId, wrappedEventSerializer)
         }
-        val events = playerSlot.receiveChannel.receiveAsFlow().asFlux()
+        val events = playerSlot.receiveChannel.asFlux()
             .map { (event, state) -> session.eventMessage(event, state, playerSlot.playerId, wrappedEventSerializer) }
 
         return session.send(initialStateFlux.concatWith(events))

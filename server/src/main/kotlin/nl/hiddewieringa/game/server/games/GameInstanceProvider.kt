@@ -2,6 +2,8 @@ package nl.hiddewieringa.game.server.games
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.KSerializer
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
@@ -16,7 +18,7 @@ private val logger = KotlinLogging.logger {}
 class PlayerSlot<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val playerId: PID,
     val sendChannel: SendChannel<A>,
-    val receiveChannel: ReceiveChannel<Pair<E, S>>,
+    val receiveChannel: SharedFlow<Pair<E, S>>,
 ) {
 
     var referenceCount = AtomicInteger()
@@ -52,7 +54,14 @@ class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
 
 class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any> : Player<M, E, A, PlayerId, S> {
 
-    val eventChannel = Channel<Pair<E, S>>(capacity = 0)
+    /**
+     * Hot flow that can have multiple consumers. No replay: new consumers have to fetch the latest state manually, and will not receive past events.
+     */
+    val eventChannel = MutableSharedFlow<Pair<E, S>>(replay = 0)
+
+    /**
+     * Actions must be delivered exactly once, suspending until they are delivered.
+     */
     val actionChannel = Channel<A>(capacity = 0)
 
     override fun play(parameters: M, playerId: PlayerId, initialState: S, events: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
@@ -64,7 +73,7 @@ class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any>
             }
             launch {
                 events.consumeEach { (event, state) ->
-                    eventChannel.send(event to state)
+                    eventChannel.emit(event to state)
                 }
             }
         }
@@ -98,7 +107,7 @@ class GameInstanceProvider(
         val parameters = gameDetails.defaultParameters
 
         // We need a reference to the players for exposing the channels
-        val playerConfiguration = gameDetails.playerConfigurationFactory({ WebsocketPlayer<M, A, E, PS>() as P })
+        val playerConfiguration = gameDetails.playerConfigurationFactory { WebsocketPlayer<M, A, E, PS>() as P }
 
         val stateUpdateChannel = Channel<S>()
         val playerStateActor = coroutineScope.actor<GameStateRequest<S>> {
@@ -153,7 +162,7 @@ class GameInstanceProvider(
             stateJob.cancel()
             playerConfiguration.allPlayers.forEach {
                 (playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>).actionChannel.close()
-                (playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>).eventChannel.close()
+//                (playerConfiguration.player(it) as WebsocketPlayer<M, A, E, PS>).eventChannel.close()
             }
             logger.info("Removed game instance $instanceId (active games ${instances.size}).")
         }

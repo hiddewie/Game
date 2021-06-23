@@ -17,15 +17,15 @@ import kotlinx.coroutines.launch
 class GameManager {
 
     suspend fun <
-        M : GameParameters,
-        P : Player<M, E, A, PID, PS>,
-        A : PlayerActions,
-        E : Event,
-        PID : PlayerId,
-        PC : PlayerConfiguration<PID, P>,
-        S : GameState<S>,
-        PS
-        > play(
+            M : GameParameters,
+            P : Player<M, E, A, PID, PS>,
+            A : PlayerActions,
+            E : Event,
+            PID : PlayerId,
+            PC : PlayerConfiguration<PID, P>,
+            S : GameState<S>,
+            PS
+            > play(
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
         parameters: M,
@@ -35,7 +35,7 @@ class GameManager {
         coroutineScope {
             val players = playerFactory()
 
-            // TODO why unlimited capacity? Would be better to meet-and-greet for delivering events and actions (?)
+            // Use unlimited capacity such that there is no blocking when there are no consumers
             val gameReceiveChannel = Channel<Pair<PID, A>>(capacity = UNLIMITED)
             val gameSendChannel = Channel<Triple<PID, E, PS>>(capacity = UNLIMITED)
             val playerChannels = players.allPlayers.associateWith { Channel<Pair<E, PS>>(capacity = UNLIMITED) }
@@ -53,7 +53,9 @@ class GameManager {
                 val playerProducer = players.player(playerId).play(parameters, playerId, context.state.playerState(playerId), playerChannels.getValue(playerId))
                 val playerSendChannel = produce(coroutineContext, UNLIMITED, playerProducer)
                 launch {
-                    playerSendChannel.consumeEach { gameReceiveChannel.send(playerId to it) }
+                    playerSendChannel.consumeEach {
+                        gameReceiveChannel.send(playerId to it)
+                    }
                 }
             }
 
