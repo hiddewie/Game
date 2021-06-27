@@ -17,15 +17,15 @@ import kotlinx.coroutines.launch
 class GameManager {
 
     suspend fun <
-            M : GameParameters,
-            P : Player<M, E, A, PID, PS>,
-            A : PlayerActions,
-            E : Event,
-            PID : PlayerId,
-            PC : PlayerConfiguration<PID, P>,
-            S : GameState<S>,
-            PS
-            > play(
+        M : GameParameters,
+        P : Player<M, E, A, PID, PS>,
+        A : PlayerActions,
+        E : Event,
+        PID : PlayerId,
+        PC : PlayerConfiguration<PID, P>,
+        S : GameState<S>,
+        PS
+        > play(
         gameStateFactory: (M) -> S,
         playerFactory: () -> PC,
         parameters: M,
