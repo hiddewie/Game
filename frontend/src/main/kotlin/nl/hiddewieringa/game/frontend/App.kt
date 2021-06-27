@@ -10,14 +10,11 @@ import kotlinx.html.DIV
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.frontend.games.TaiPanComponent
 import nl.hiddewieringa.game.frontend.games.TicTacToeComponent
-import nl.hiddewieringa.game.taipan.TaiPanEvent
 import nl.hiddewieringa.game.taipan.TaiPanPlayerActions
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
-import nl.hiddewieringa.game.tictactoe.TicTacToeEvent
 import nl.hiddewieringa.game.tictactoe.TicTacToePlayerActions
 import nl.hiddewieringa.game.tictactoe.state.TicTacToePlayerState
 import org.w3c.dom.WebSocket
@@ -30,6 +27,7 @@ import react.router.dom.routeLink
 import react.router.dom.switch
 import styled.css
 import styled.styledDiv
+import styled.styledH5
 
 // TODO remove, include from the common compiled models
 external interface GameDetails {
@@ -241,7 +239,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     val (connected, setConnected) = useState(false)
     val (gameState, setGameState) = useState<Any?>(null)
     val (playerId, setPlayerId) = useState<String?>(null)
-    val (gameEvents, addGameEvent) = useReducer<Array<String>, String>({ state, action -> state + arrayOf(action)}, emptyArray())
+    val (gameEvents, addGameEvent) = useReducer<Array<String>, String>({ state, action -> arrayOf(action) + state }, emptyArray())
 
     val webSocket = useRef<WebSocket?>(null)
 
@@ -290,7 +288,14 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         webSocket.current?.send(action)
     }
 
-    div {
+    styledDiv {
+        css {
+            height = 100.pct
+            width = 100.pct
+            display = Display.flex
+            flexDirection = FlexDirection.column
+        }
+
         div("uk-margin uk-flex") {
             ul("uk-breadcrumb uk-flex-auto") {
                 routeLink("") {
@@ -328,9 +333,15 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
                     flex(1.0, 1.0, 25.pct)
                     minWidth = 15.rem
                     maxWidth = 40.rem
+                    paddingRight = 2.rem
                 }
 
-                +"Game events"
+                styledH5 {
+                    css {
+                        put("font-variant", "small-caps")
+                    }
+                    +"Game events"
+                }
 
                 gameEvents.map { event ->
                     div {

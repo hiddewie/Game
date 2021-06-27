@@ -17,7 +17,7 @@ class SimpleTaiPanPlayer : Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlaye
 
     override fun play(parameters: TaiPanGameParameters, playerId: TwoTeamPlayerId, initialState: TaiPanPlayerState, events: ReceiveChannel<Pair<TaiPanEvent, TaiPanPlayerState>>): suspend ProducerScope<TaiPanPlayerActions>.() -> Unit =
         {
-            events.consumeEach { (event, state) ->
+            events.consumeEach { (_, state) ->
                 when (state.stateType) {
                     TaiPanPlayerStateType.RECEIVE_CARDS -> {
                         if (state.playersToPlay.contains(playerId) && !requestedCards) {
