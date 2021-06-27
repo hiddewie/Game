@@ -4,7 +4,9 @@ import nl.hiddewieringa.game.taipan.PhoenixValue
 import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.ACE
 import nl.hiddewieringa.game.taipan.card.NumberedCard.Companion.JACK
 import nl.hiddewieringa.game.taipan.card.Suit.*
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class CardCombinationTest {
 
@@ -136,5 +138,8 @@ class CardCombinationTest {
         assertNull(findCardCombination(null, setOf(6 of HEARTS, 8 of HEARTS, 9 of HEARTS, 10 of HEARTS), emptySet()))
         assertNull(findCardCombination(null, setOf(6 of HEARTS, Dog), emptySet()))
         assertNull(findCardCombination(null, setOf(6 of HEARTS, Dragon), emptySet()))
+
+        // Phoenix over dragon
+        assertNull(findCardCombination(HighCard(Dragon), setOf(Phoenix), emptySet()))
     }
 }
