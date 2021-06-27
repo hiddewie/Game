@@ -3,7 +3,6 @@ package nl.hiddewieringa.game.server.games
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import mu.KLogging
-import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
 import java.util.*
@@ -23,15 +22,15 @@ class GameInstanceProvider(
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
     suspend fun <
-            M : GameParameters,
-            P : Player<M, E, A, PID, PS>,
-            A : PlayerActions,
-            E : Event,
-            PID : PlayerId,
-            PC : PlayerConfiguration<PID, P>,
-            S : GameState<S>, PS : Any
-            >
-            start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
+        M : GameParameters,
+        P : Player<M, E, A, PID, PS>,
+        A : PlayerActions,
+        E : Event,
+        PID : PlayerId,
+        PC : PlayerConfiguration<PID, P>,
+        S : GameState<S>, PS : Any
+        >
+    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
         val coroutineScope = CoroutineScope(threadPoolDispatcher)
 
         val instanceId = UUID.randomUUID()
@@ -64,14 +63,16 @@ class GameInstanceProvider(
             logger.info("State update channel end consume")
         }
 
-        val playerSlots = playerConfiguration.associate { playerId ->
-            val player = playerConfiguration.player(playerId) as WebsocketPlayer<M, A, E, PS>
-            UUID.randomUUID() to PlayerSlot(
-                playerId,
-                player.actionChannel,
-                player.eventChannel,
-            )
-        }
+        val playerSlots: Map<UUID, PlayerSlot<A, E, PS, PID>> = playerConfiguration
+            .filter { playerId -> playerConfiguration.player(playerId) is WebsocketPlayer<*, *, *, *> }
+            .associate { playerId ->
+                val player = playerConfiguration.player(playerId) as WebsocketPlayer<M, A, E, PS>
+                UUID.randomUUID() to PlayerSlot(
+                    playerId,
+                    player.actionChannel,
+                    player.eventChannel,
+                )
+            }
 
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game

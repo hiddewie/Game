@@ -114,6 +114,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 attrs.playerId = partnerPlayerId
                 attrs.taiPanned = gameState.taiPannedPlayers[partnerPlayerId]
                 attrs.shouldPlay = gameState.playersToPlay.contains(partnerPlayerId)
+                attrs.shouldExchange = false
                 attrs.numberOfCards = gameState.numberOfCardsPerPlayer[partnerPlayerId] ?: 0
             }
         }
@@ -137,6 +138,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                     attrs.playerId = leftPlayerId
                     attrs.taiPanned = gameState.taiPannedPlayers[leftPlayerId]
                     attrs.shouldPlay = gameState.playersToPlay.contains(leftPlayerId)
+                    attrs.shouldExchange = false
                     attrs.numberOfCards = gameState.numberOfCardsPerPlayer[leftPlayerId] ?: 0
                 }
             }
@@ -370,6 +372,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                     attrs.playerId = rightPlayerId
                     attrs.taiPanned = gameState.taiPannedPlayers[rightPlayerId]
                     attrs.shouldPlay = gameState.playersToPlay.contains(rightPlayerId)
+                    attrs.shouldExchange = false
                     attrs.numberOfCards = gameState.numberOfCardsPerPlayer[rightPlayerId] ?: 0
                 }
             }
@@ -385,6 +388,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                 attrs.playerId = playerId
                 attrs.taiPanned = gameState.taiPannedPlayers[playerId]
                 attrs.shouldPlay = gameState.playersToPlay.contains(playerId)
+                attrs.shouldExchange = gameState.stateType == TaiPanPlayerStateType.EXCHANGE_CARDS // TODO check if already exchanged
                 attrs.exchangeCardLeft = { card -> setExchangeCards(Triple(card, exchangeCards.second, exchangeCards.third)) }
                 attrs.exchangeCardForward = { card -> setExchangeCards(Triple(exchangeCards.first, card, exchangeCards.third)) }
                 attrs.exchangeCardRight = { card -> setExchangeCards(Triple(exchangeCards.first, exchangeCards.second, card)) }
