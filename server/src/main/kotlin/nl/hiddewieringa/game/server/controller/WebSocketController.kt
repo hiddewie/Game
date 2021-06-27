@@ -10,6 +10,7 @@ import kotlinx.coroutines.reactor.mono
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import mu.KLogging
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.core.PlayerActions
@@ -28,8 +29,6 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriTemplate
 import reactor.core.publisher.Mono
 import java.util.*
-
-private val logger = KotlinLogging.logger {}
 
 @Serializable
 data class WrappedAction<A : PlayerActions>(val action: A)
@@ -102,7 +101,7 @@ class WebSocketController(
     private fun <S : Any, PID : PlayerId> WebSocketSession.stateMessage(state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =
         textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, state, playerId)))
 
-    companion object {
+    companion object : KLogging() {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"
     }
 }

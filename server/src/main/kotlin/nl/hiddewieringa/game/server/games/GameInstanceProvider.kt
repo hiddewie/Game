@@ -2,82 +2,13 @@ package nl.hiddewieringa.game.server.games
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.serialization.KSerializer
+import mu.KLogging
 import mu.KotlinLogging
 import nl.hiddewieringa.game.core.*
 import org.springframework.stereotype.Component
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
-
-private val logger = KotlinLogging.logger {}
-
-class PlayerSlot<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
-    val playerId: PID,
-    val sendChannel: SendChannel<A>,
-    val receiveChannel: SharedFlow<Pair<E, S>>,
-) {
-
-    var referenceCount = AtomicInteger()
-
-    fun increaseReference() {
-        referenceCount.incrementAndGet()
-        logger.info("player slot $playerId ${referenceCount.get()}")
-    }
-
-    fun decreaseReference() {
-        referenceCount.decrementAndGet()
-        logger.info("player slot $playerId ${referenceCount.get()}")
-    }
-}
-
-// TODO store start timestamp
-class GameInstance<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
-    val id: UUID,
-    val gameSlug: String,
-    val playerSlots: Map<UUID, PlayerSlot<A, E, S, PID>>,
-    val stateProvider: suspend (PID) -> S,
-    val actionSerializer: KSerializer<A>,
-    val eventSerializer: KSerializer<E>,
-    val stateSerializer: KSerializer<S>,
-    val playerIdSerializer: KSerializer<PID>,
-) {
-    val open: Boolean
-        get() = playerSlots.values.any { it.referenceCount.get() == 0 }
-
-    suspend fun playerState(playerSlotId: UUID): S =
-        stateProvider(playerSlots.getValue(playerSlotId).playerId)
-}
-
-class WebsocketPlayer<M : GameParameters, A : PlayerActions, E : Event, S : Any> : Player<M, E, A, PlayerId, S> {
-
-    /**
-     * Hot flow that can have multiple consumers. No replay: new consumers have to fetch the latest state manually, and will not receive past events.
-     */
-    val eventChannel = MutableSharedFlow<Pair<E, S>>(replay = 0)
-
-    /**
-     * Actions must be delivered exactly once, suspending until they are delivered.
-     */
-    val actionChannel = Channel<A>(capacity = 0)
-
-    override fun play(parameters: M, playerId: PlayerId, initialState: S, events: ReceiveChannel<Pair<E, S>>): suspend ProducerScope<A>.() -> Unit =
-        {
-            launch {
-                actionChannel.consumeEach {
-                    send(it)
-                }
-            }
-            launch {
-                events.consumeEach { (event, state) ->
-                    eventChannel.emit(event to state)
-                }
-            }
-        }
-}
 
 sealed class GameStateRequest<S : GameState<S>>
 data class UpdateState<S : GameState<S>>(val state: S) : GameStateRequest<S>()
@@ -92,15 +23,15 @@ class GameInstanceProvider(
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
     suspend fun <
-        M : GameParameters,
-        P : Player<M, E, A, PID, PS>,
-        A : PlayerActions,
-        E : Event,
-        PID : PlayerId,
-        PC : PlayerConfiguration<PID, P>,
-        S : GameState<S>, PS : Any
-        >
-    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
+            M : GameParameters,
+            P : Player<M, E, A, PID, PS>,
+            A : PlayerActions,
+            E : Event,
+            PID : PlayerId,
+            PC : PlayerConfiguration<PID, P>,
+            S : GameState<S>, PS : Any
+            >
+            start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
         val coroutineScope = CoroutineScope(threadPoolDispatcher)
 
         val instanceId = UUID.randomUUID()
@@ -195,4 +126,6 @@ class GameInstanceProvider(
             .filter { it.gameSlug == gameSlug }
             .filter(GameInstance<*, *, *, *>::open)
             .toList()
+
+    companion object : KLogging()
 }
