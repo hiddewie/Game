@@ -45,5 +45,4 @@ class HomeController(
 
     private suspend fun <M : GameParameters> startDeserialized(game: GameDetails<M, *, *, *, *, *, *, *>, parameters: String): UUID =
         gameInstanceProvider.start(game, serializer.decodeFromString(game.parameterSerializer, parameters))
-
 }

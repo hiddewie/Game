@@ -193,7 +193,6 @@ data class TaiPan(
     ) : this(
         parameters,
         points,
-        // TODO
         // This might not generate enough permutations to make all possible 52! shuffles possible!
         //   We would need 226 bits of entropy to be able to generate all combinations
         //   See https://www.wikiwand.com/en/Fisher%E2%80%93Yates_shuffle#/Pseudorandom_generators
@@ -205,7 +204,7 @@ data class TaiPan(
                     .mapValues { it.value.toMutableList() }
                     .onEach { it.value.sortWith(naturalOrder()) }
             },
-        TwoTeamPlayerId.values().associate { it to setOf<Card>() },
+        TwoTeamPlayerId.values().associateWith { emptySet<Card>() },
         mapOf<TwoTeamPlayerId, TaiPanStatus>(),
         roundIndex
     )
