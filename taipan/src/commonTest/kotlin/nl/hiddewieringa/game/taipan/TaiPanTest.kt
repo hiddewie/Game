@@ -21,7 +21,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import kotlin.time.seconds
+import kotlin.time.Duration
 
 class TaiPanTest {
 
@@ -344,19 +344,19 @@ class TaiPanTest {
         }
 
         launch {
-            withTimeout(2.seconds) {
+            withTimeout(Duration.seconds(2)) {
                 val gameResult = GameContext(players, game, gamePlayerChannel, Channel(capacity = Channel.UNLIMITED), playerGameChannel, { this }).playGame()
                 assertEquals(TaiPanFinalScore(TwoTeamTeamId.TEAM2, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)), gameResult)
             }
         }
 
-        withTimeout(1.seconds) {
+        withTimeout(Duration.seconds(1)) {
             playerAsserts.await()
         }
         if (!gamePlayerChannel.isEmpty) {
             val messages = buildList {
                 while (!gamePlayerChannel.isEmpty) {
-                    add(gamePlayerChannel.poll())
+                    add(gamePlayerChannel.tryReceive().getOrNull())
                 }
             }
             gamePlayerChannel.close()
