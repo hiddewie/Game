@@ -1,19 +1,27 @@
 package nl.hiddewieringa.game.frontend.games
 
 import kotlinx.css.*
+import kotlinx.html.ButtonType
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.frontend.GameUiProps
+import nl.hiddewieringa.game.frontend.ParametersProps
 import nl.hiddewieringa.game.tictactoe.*
 import nl.hiddewieringa.game.tictactoe.state.TicTacToePlayerState
-import react.dom.div
-import react.dom.key
-import react.dom.tbody
-import react.dom.tr
+import react.dom.*
 import react.functionalComponent
 import styled.css
 import styled.styledP
 import styled.styledTable
 import styled.styledTd
+
+val TicTacToeParametersComponent = functionalComponent<ParametersProps<TicTacToeGameParameters>> { props ->
+    val startGame = props.startGame
+
+    button(null, null, ButtonType.button, "uk-button uk-button-primary") {
+        attrs.onClickFunction = { startGame(TicTacToeGameParameters.serializer(), TicTacToeGameParameters) }
+        +"Start a new game"
+    }
+}
 
 val emptyBoard = arrayOf(arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null))
 

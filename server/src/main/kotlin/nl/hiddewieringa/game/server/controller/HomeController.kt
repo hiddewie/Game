@@ -1,12 +1,12 @@
 package nl.hiddewieringa.game.server.controller
 
+import kotlinx.serialization.json.Json
+import nl.hiddewieringa.game.core.GameParameters
+import nl.hiddewieringa.game.server.games.GameDetails
 import nl.hiddewieringa.game.server.games.GameInstance
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import nl.hiddewieringa.game.server.games.GameProvider
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
@@ -14,6 +14,7 @@ class HomeController(
     val gameProvider: GameProvider,
     val gameInstanceProvider: GameInstanceProvider,
 ) {
+    val serializer = Json {}
 
     data class GameListItem(val slug: String, val name: String, val description: String)
 
@@ -39,6 +40,10 @@ class HomeController(
         )
 
     @PostMapping("games/{gameSlug}/start")
-    suspend fun startGame(@PathVariable gameSlug: String): UUID =
-        gameInstanceProvider.start(gameProvider.bySlug(gameSlug))
+    suspend fun startGame(@PathVariable gameSlug: String, @RequestBody parameters: String): UUID =
+        startDeserialized(gameProvider.bySlug(gameSlug), parameters)
+
+    private suspend fun <M : GameParameters> startDeserialized(game: GameDetails<M, *, *, *, *, *, *, *>, parameters: String): UUID =
+        gameInstanceProvider.start(game, serializer.decodeFromString(game.parameterSerializer, parameters))
+
 }

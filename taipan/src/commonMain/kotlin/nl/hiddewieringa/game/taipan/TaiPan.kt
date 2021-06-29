@@ -1,5 +1,6 @@
 package nl.hiddewieringa.game.taipan
 
+import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.taipan.card.*
 import kotlin.random.Random
@@ -676,6 +677,7 @@ data class TaiPanFinalScore(
     val points: Map<TwoTeamTeamId, Int>,
 ) : TaiPanState()
 
+@Serializable
 data class TaiPanGameParameters(val points: Int, val seed: Long) : GameParameters
 
 data class MahjongWish(

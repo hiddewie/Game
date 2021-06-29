@@ -25,8 +25,8 @@ data class GameDetails<
     val description: String,
     val gameFactory: (M) -> S,
     val playerConfigurationFactory: (player: () -> P) -> PC,
-    val defaultParameters: M,
     val playerState: S.(PID) -> PS,
+    val parameterSerializer: KSerializer<M>,
     val actionSerializer: KSerializer<A>,
     val eventSerializer: KSerializer<E>,
     val stateSerializer: KSerializer<PS>,
@@ -44,8 +44,8 @@ class GameProvider {
         { player: () -> Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToePlayerState> ->
             TwoPlayers(player(), player())
         },
-        TicTacToeGameParameters,
         TicTacToeState::toPlayerState,
+        TicTacToeGameParameters.serializer(),
         TicTacToePlayerActions.serializer(),
         TicTacToeEvent.serializer(),
         TicTacToePlayerState.serializer(),
@@ -61,8 +61,8 @@ class GameProvider {
         { player: () -> Player<TaiPanGameParameters, TaiPanEvent, TaiPanPlayerActions, TwoTeamPlayerId, TaiPanPlayerState> ->
             TwoTeams(TwoPlayers(player(), player()), TwoPlayers(player(), player()))
         },
-        TaiPanGameParameters(1000, 0),
         TaiPanState::toPlayerState,
+        TaiPanGameParameters.serializer(),
         TaiPanPlayerActions.serializer(),
         TaiPanEvent.serializer(),
         TaiPanPlayerState.serializer(),

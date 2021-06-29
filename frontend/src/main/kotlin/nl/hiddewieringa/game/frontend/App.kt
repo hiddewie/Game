@@ -7,13 +7,15 @@ import kotlinx.coroutines.launch
 import kotlinx.css.*
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
-import kotlinx.html.id
-import kotlinx.html.js.onClickFunction
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import nl.hiddewieringa.game.core.GameParameters
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.frontend.games.TaiPanComponent
+import nl.hiddewieringa.game.frontend.games.TaiPanParametersComponent
 import nl.hiddewieringa.game.frontend.games.TicTacToeComponent
+import nl.hiddewieringa.game.frontend.games.TicTacToeParametersComponent
 import nl.hiddewieringa.game.taipan.TaiPanPlayerActions
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import nl.hiddewieringa.game.tictactoe.TicTacToePlayerActions
@@ -111,10 +113,20 @@ external interface OpenGame {
     val playerSlotIds: Array<OpenGamePlayerSlot>
 }
 
+external interface ParametersProps<P : GameParameters> : RProps {
+    var startGame: (serializer: KSerializer<P>, properties: P) -> Unit
+}
+
 val OpenGamesComponent = functionalComponent<GameSlug> { params ->
     val gameSlug = params.gameSlug
 
     val (openGames, setOpenGames) = useState<Array<OpenGame>>(emptyArray())
+
+    val parameterComponent = when (gameSlug) {
+        "tic-tac-toe" -> TicTacToeParametersComponent
+        "tai-pan" -> TaiPanParametersComponent
+        else -> throw IllegalStateException("Unknown game slug $gameSlug")
+    }
 
     val fetchData = useCallback({
         MainScope().launch {
@@ -128,9 +140,10 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
         }
     }, emptyArray())
 
-    val startGame = {
+    fun <M : GameParameters> startGame(parameterSerializer: KSerializer<M>, parameters: M) {
+        console.info("Starting game $gameSlug with parameters", parameters)
         MainScope().launch {
-            val startedGame = window.fetch("http://localhost:8081/games/${gameSlug}/start", RequestInit(method = "POST"))
+            val startedGame = window.fetch("http://localhost:8081/games/${gameSlug}/start", RequestInit(method = "POST", body = serializer.encodeToString(parameterSerializer, parameters)))
                 .await()
                 .json()
                 .await()
@@ -194,9 +207,8 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
         listItems()
 
         div("uk-margin") {
-            button(null, null, ButtonType.button, "uk-button uk-button-primary") {
-                attrs.onClickFunction = { startGame() }
-                +"Start a new game"
+            child(parameterComponent) {
+                attrs.startGame = { serializer, parameters -> startGame(serializer, parameters) }
             }
         }
     }

@@ -136,6 +136,7 @@ data class IllegalMove(val player: TwoPlayerId) : TicTacToeEvent()
 @Serializable
 data class GameEnded(val playerWon: TwoPlayerId?) : TicTacToeEvent()
 
+@Serializable
 object TicTacToeGameParameters : GameParameters
 
 @Serializable

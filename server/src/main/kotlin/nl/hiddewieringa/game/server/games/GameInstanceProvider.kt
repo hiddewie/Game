@@ -30,11 +30,10 @@ class GameInstanceProvider(
         PC : PlayerConfiguration<PID, P>,
         S : GameState<S>, PS : Any
         >
-    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>): UUID {
+    start(gameDetails: GameDetails<M, P, A, E, PID, PC, S, PS>, parameters: M): UUID {
         val coroutineScope = CoroutineScope(threadPoolDispatcher)
 
         val instanceId = UUID.randomUUID()
-        val parameters = gameDetails.defaultParameters
 
         // We need a reference to the players for exposing the channels
         val playerConfiguration = gameDetails.playerConfigurationFactory { WebsocketPlayer<M, A, E, PS>() as P }
@@ -77,7 +76,7 @@ class GameInstanceProvider(
         // Use the global scope to launch a
         //   WITHOUT waiting for the result of the game
         //   using the thread pool for running games.
-        val job = coroutineScope.launch {
+        coroutineScope.launch {
             // TODO simplify: less factories, more concrete arguments
             val gameResult = gameManager.play(
                 gameDetails.gameFactory,

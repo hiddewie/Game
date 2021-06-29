@@ -4,26 +4,90 @@ import kotlinx.css.*
 import kotlinx.css.properties.deg
 import kotlinx.css.properties.rotate
 import kotlinx.css.properties.transform
+import kotlinx.html.ButtonType
+import kotlinx.html.InputType
 import kotlinx.html.classes
+import kotlinx.html.js.onChangeFunction
 import kotlinx.html.js.onClickFunction
 import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.frontend.GameUiProps
+import nl.hiddewieringa.game.frontend.ParametersProps
 import nl.hiddewieringa.game.frontend.games.taipan.*
 import nl.hiddewieringa.game.taipan.*
 import nl.hiddewieringa.game.taipan.card.*
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerStateType
+import org.w3c.dom.HTMLInputElement
 import react.child
-import react.dom.button
-import react.dom.div
-import react.dom.i
-import react.dom.p
+import react.dom.*
 import react.functionalComponent
 import react.useState
 import styled.css
 import styled.styledDiv
 import styled.styledImg
+import styled.styledInput
 import kotlin.Triple
+import kotlin.random.Random
+
+val TaiPanParametersComponent = functionalComponent<ParametersProps<TaiPanGameParameters>> { props ->
+    val startGame = props.startGame
+    val (seed) = useState(Random.nextLong(0, Long.MAX_VALUE - 1))
+    val (parameters, setParameters) = useState(TaiPanGameParameters(1000, seed))
+
+    form(classes = "uk-form-stacked") {
+        div("uk-margin") {
+            div("uk-form-label") {
+                +"Game points"
+            }
+            div("uk-form-controls") {
+                label {
+                    input(InputType.radio, classes = "uk-radio", name = "points") {
+                        attrs.onChangeFunction = {
+                            setParameters(parameters.copy(points = 500))
+                        }
+                    }
+                    +" 500 points"
+                }
+                br {}
+                label {
+                    input(InputType.radio, classes = "uk-radio", name = "points") {
+                        attrs.defaultChecked = true
+                        attrs.onChangeFunction = {
+                            setParameters(parameters.copy(points = 1000))
+                        }
+                    }
+                    +" 1000 points"
+                }
+            }
+            div("uk-form-label") {
+                +"Seed"
+            }
+            div("uk-form-controls") {
+                styledInput(InputType.number) {
+                    css {
+                        maxWidth = 20.rem
+                    }
+                    attrs.defaultValue = seed.toString()
+                    attrs.classes = setOf("uk-input")
+                    attrs.name = "seed"
+                    attrs.min = "0"
+                    attrs.step = "1"
+                    attrs.max = Long.MAX_VALUE.toString()
+                    attrs.onChangeFunction = { event ->
+                        setParameters(parameters.copy(seed = (event.target as HTMLInputElement).value.toLong()))
+                    }
+                }
+            }
+        }
+    }
+
+    div("uk-margin") {
+        button(null, null, ButtonType.button, "uk-button uk-button-primary") {
+            attrs.onClickFunction = { startGame(TaiPanGameParameters.serializer(), parameters) }
+            +"Start a new game"
+        }
+    }
+}
 
 // TODO implement auto-fold with random delay
 
