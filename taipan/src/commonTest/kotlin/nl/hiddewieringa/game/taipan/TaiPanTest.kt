@@ -375,7 +375,7 @@ class TaiPanTest {
 
     private suspend fun <A : Any, B : Any> ChannelAsserter<Pair<A, B>>.assertNext(first: A) {
         val (key, value) = channel.receive()
-        assertTrue(key == first, "Got ($key, $value), expected ($first)")
+        assertEquals(first, key, "Got ($key, $value), expected ($first)")
     }
 
     private suspend fun <A : Any, B : Any, T : B, C : Any> ChannelAsserter<kotlin.Triple<A, B, C>>.assertNext(first: A, second: KClass<T>) {
