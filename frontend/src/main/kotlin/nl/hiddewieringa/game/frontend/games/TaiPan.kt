@@ -10,19 +10,20 @@ import nl.hiddewieringa.game.core.TwoTeamPlayerId
 import nl.hiddewieringa.game.frontend.GameUiProps
 import nl.hiddewieringa.game.frontend.games.taipan.*
 import nl.hiddewieringa.game.taipan.*
-import nl.hiddewieringa.game.taipan.card.Card
-import nl.hiddewieringa.game.taipan.card.ThreeWayPass
+import nl.hiddewieringa.game.taipan.card.*
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerState
 import nl.hiddewieringa.game.taipan.state.TaiPanPlayerStateType
 import react.child
 import react.dom.button
 import react.dom.div
+import react.dom.i
 import react.dom.p
 import react.functionalComponent
 import react.useState
 import styled.css
 import styled.styledDiv
 import styled.styledImg
+import kotlin.Triple
 
 // TODO implement auto-fold with random delay
 
@@ -33,6 +34,8 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
 
     val (selectedCards, setSelectedCards) = useState(emptySet<Card>())
     val (exchangeCards, setExchangeCards) = useState<Triple<Card?, Card?, Card?>>(Triple(null, null, null))
+    val (mahjongRequestValue, selectMahjongRequest) = useState<Int?>(null)
+    val (phoenixValue, selectPhoenixValue) = useState<Int?>(null)
 
     val callTaiPan = {
         dispatchAction.dispatch(CallTaiPan)
@@ -52,10 +55,15 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
 
     val playCards = {
         if (selectedCards.isNotEmpty()) {
-            // TODO gather addons
-            val addons = emptySet<PlayCardsAddon>()
+            val addons = setOfNotNull(
+                mahjongRequestValue?.let(::MahjongRequest),
+                phoenixValue?.let(::PhoenixValue),
+            )
 
             dispatchAction.dispatch(PlayCards(selectedCards, addons))
+
+            selectMahjongRequest(null)
+            selectPhoenixValue(null)
         } else {
             // TODO
             console.error("Not implemented")
@@ -199,8 +207,6 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                             justifyContent = JustifyContent.center
                         }
 
-                        // TODO improve status texts UI
-
                         when (gameState.stateType) {
                             TaiPanPlayerStateType.RECEIVE_CARDS -> {
                                 if (gameState.playersToPlay.contains(playerId)) {
@@ -299,6 +305,7 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                     css {
                                         display = Display.flex
                                         justifyContent = JustifyContent.center
+                                        textAlign = TextAlign.center
                                         visibility = if (gameState.playersToPlay.contains(playerId)) Visibility.visible else Visibility.hidden
                                     }
 
@@ -311,6 +318,73 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                         attrs.classes = setOf("uk-button", "uk-button-primary")
                                         attrs.onClickFunction = { fold() }
                                         +"Fold"
+                                    }
+                                }
+
+                                styledDiv {
+                                    css {
+                                        display = Display.flex
+                                        justifyContent = JustifyContent.center
+                                        visibility = if (gameState.playersToPlay.contains(playerId) && selectedCards.contains(Phoenix)) Visibility.visible else Visibility.hidden
+                                    }
+
+                                    div {
+                                        i {
+                                            +"Select Phoenix value"
+                                        }
+                                    }
+
+                                    styledDiv {
+                                        css {
+                                            display = Display.flex
+                                            justifyContent = JustifyContent.center
+                                        }
+
+                                        val choices: Map<String, Int?> = NumberedCard.VALUES.associateBy(NumberedCard::stringifyValue)
+                                        div("uk-button-group") {
+                                            choices.forEach { (label, value) ->
+                                                button {
+                                                    attrs.classes = setOf("uk-button", if (mahjongRequestValue == value) "uk-button-primary" else "uk-button-default", "uk-button-small")
+                                                    attrs.onClickFunction = { selectPhoenixValue(value) }
+                                                    +label
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                styledDiv {
+                                    css {
+                                        display = Display.flex
+                                        flexDirection = FlexDirection.column
+                                        justifyContent = JustifyContent.center
+                                        textAlign = TextAlign.center
+                                        visibility = if (gameState.playersToPlay.contains(playerId) && selectedCards.contains(Mahjong)) Visibility.visible else Visibility.hidden
+                                    }
+
+                                    div {
+                                        i {
+                                            +"Select Mahjong value"
+                                        }
+                                    }
+
+                                    // TODO extract to shared 'select value' component
+                                    styledDiv {
+                                        css {
+                                            display = Display.flex
+                                            justifyContent = JustifyContent.center
+                                        }
+
+                                        val choices: Map<String, Int?> = mapOf("∅" to null) + NumberedCard.VALUES.associateBy(NumberedCard::stringifyValue)
+                                        div("uk-button-group") {
+                                            choices.forEach { (label, value) ->
+                                                button {
+                                                    attrs.classes = setOf("uk-button", if (mahjongRequestValue == value) "uk-button-primary" else "uk-button-default", "uk-button-small")
+                                                    attrs.onClickFunction = { selectMahjongRequest(value) }
+                                                    +label
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

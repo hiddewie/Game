@@ -211,7 +211,7 @@ fun findCardCombination(lastPlayedCards: CardCombination?, cards: CardSet, addon
             mahjong != null -> null
 
             phoenix != null && sortedCards.size == 1 -> when (lastPlayedCards) {
-                is HighCard -> when(lastPlayedCards.card) {
+                is HighCard -> when (lastPlayedCards.card) {
                     is Dragon -> null
                     else -> HighCard(phoenix, lastPlayedCards.value + 0.5f)
                 }

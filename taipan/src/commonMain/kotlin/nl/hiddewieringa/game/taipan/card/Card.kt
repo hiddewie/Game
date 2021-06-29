@@ -28,11 +28,14 @@ sealed class Card(
 }
 
 @Serializable
-enum class Suit {
-    HEARTS,
-    DIAMONDS,
-    SPADES,
-    CLUBS
+enum class Suit(val character: String) {
+    HEARTS("♥"),
+    DIAMONDS("♦"),
+    SPADES("♠"),
+    CLUBS("♣");
+
+    override fun toString(): String =
+        character
 }
 
 infix fun Int.of(suit: Suit): NumberedCard =
@@ -52,24 +55,25 @@ data class NumberedCard(val suit: Suit, val value: Int) : Card(
     }
 
     override fun toString() =
-        when (suit) {
-            Suit.HEARTS -> "♥"
-            Suit.DIAMONDS -> "♦"
-            Suit.SPADES -> "♠"
-            Suit.CLUBS -> "♣"
-        } + when (value) {
-            ACE -> "A"
-            KING -> "K"
-            QUEEN -> "Q"
-            JACK -> "J"
-            else -> value.toString()
-        }
+        "$suit${stringifyValue(value)}"
 
     companion object {
         const val JACK = 11
         const val QUEEN = 12
         const val KING = 13
         const val ACE = 14
+
+        val VALUES = (2..10).toList() + listOf(JACK, QUEEN, KING, ACE)
+
+        fun stringifyValue(value: Int) =
+            when (value) {
+                in 2..10 -> value.toString()
+                ACE -> "A"
+                KING -> "K"
+                QUEEN -> "Q"
+                JACK -> "J"
+                else -> throw IllegalArgumentException("Illegal value $value")
+            }
     }
 }
 

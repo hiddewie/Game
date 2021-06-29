@@ -44,9 +44,9 @@ tasks.create<Copy>("copyCompiledFrontend") {
     from(project(":frontend").file("build/distributions"))
     into(buildDir.resolve("resources/main/public"))
 }
-tasks.processResources {
-    dependsOn("copyCompiledFrontend")
-}
+//tasks.processResources {
+//    dependsOn("copyCompiledFrontend")
+//}
 
 application {
     mainClass.set("nl.hiddewieringa.game.server.GameServerApplicationKt")

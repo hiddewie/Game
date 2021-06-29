@@ -7,6 +7,7 @@ import kotlinx.coroutines.launch
 import kotlinx.css.*
 import kotlinx.html.ButtonType
 import kotlinx.html.DIV
+import kotlinx.html.id
 import kotlinx.html.js.onClickFunction
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
