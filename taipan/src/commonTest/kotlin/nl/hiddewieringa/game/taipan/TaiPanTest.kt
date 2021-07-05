@@ -1,11 +1,8 @@
 package nl.hiddewieringa.game.taipan
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeout
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.core.TwoTeamPlayerId.*
 import nl.hiddewieringa.game.taipan.card.*
@@ -23,6 +20,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlin.time.Duration
 
+@FlowPreview
 class TaiPanTest {
 
     @Test
