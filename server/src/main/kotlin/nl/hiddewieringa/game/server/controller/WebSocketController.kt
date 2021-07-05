@@ -72,7 +72,10 @@ class WebSocketController(
                 // Messages must be retained to make Netty not lose it due to 0 message reference count
                 .map(WebSocketMessage::retain)
                 .asFlow()
-                .collect { playerSlot.sendChannel.send(readAction(it, gameInstance.actionSerializer)) }
+                .collect {
+                    playerSlot.sendChannel.send(readAction(it, gameInstance.actionSerializer))
+                    it.release()
+                }
         }
 
         val wrappedEventSerializer = WrappedEvent.serializer(gameInstance.stateSerializer, gameInstance.playerIdSerializer)
