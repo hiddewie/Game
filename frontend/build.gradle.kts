@@ -21,8 +21,6 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":taipan"))
-    implementation(project(":tictactoe"))
 
     implementation(kotlin("stdlib-js"))
 
@@ -36,21 +34,13 @@ dependencies {
     implementation(npm("react-router-dom", "5.2.0"))
     implementation(npm("react-scripts", "4.0.1"))
 
-    //Kotlin Styled (chapter 3)
     implementation("org.jetbrains:kotlin-styled:5.2.1-pre.148-kotlin-1.4.21")
     implementation(npm("styled-components", "5.2.1"))
     implementation(npm("inline-style-prefixer", "~6.0.0"))
 
-    //Video Player (chapter 7)
-//    implementation(npm("react-player", "~2.6.0"))
-
-    //Share Buttons (chapter 7)
-//    implementation(npm("react-share", "~4.2.1"))
-
-    //Coroutines (chapter 8)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
 
     // Games
-//    implementation(project(":taipan"))
-//    implementation(project(":tictactoe"))
+    implementation(project(":taipan"))
+    implementation(project(":tictactoe"))
 }
