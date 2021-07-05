@@ -7,6 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
     kotlin("plugin.spring") version "1.5.0"
     kotlin("plugin.serialization") version "1.5.0"
+    id("com.google.cloud.tools.jib") version "3.1.1"
 }
 
 group = "nl.hiddewieringa.game"
