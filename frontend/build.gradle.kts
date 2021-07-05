@@ -15,7 +15,24 @@ repositories {
 
 kotlin {
     js(IR) {
-        browser()
+        browser {
+            webpackTask {
+                args.plusAssign(listOf(
+                    "--env", "host=''"
+                ))
+                webpackConfigApplier {
+                    export = false
+                }
+            }
+            runTask {
+                args.plusAssign(listOf(
+                    "--env", "host='http://localhost:8081'"
+                ))
+                webpackConfigApplier {
+                    export = false
+                }
+            }
+        }
         binaries.executable()
     }
 }

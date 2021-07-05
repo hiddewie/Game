@@ -44,7 +44,7 @@ val GamesComponent = functionalComponent<RProps> {
 
     val fetchData = useCallback({
         MainScope().launch {
-            val fetchedGames = window.fetch("http://localhost:8081/games")
+            val fetchedGames = window.fetch("${js("HOST")}/games")
                 .await()
                 .json()
                 .await()
@@ -130,7 +130,7 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
 
     val fetchData = useCallback({
         MainScope().launch {
-            val fetchedOpenGames = window.fetch("http://localhost:8081/games/${gameSlug}/open")
+            val fetchedOpenGames = window.fetch("${js("HOST")}/games/${gameSlug}/open")
                 .await()
                 .json()
                 .await()
@@ -143,7 +143,7 @@ val OpenGamesComponent = functionalComponent<GameSlug> { params ->
     fun <M : GameParameters> startGame(parameterSerializer: KSerializer<M>, parameters: M) {
         console.info("Starting game $gameSlug with parameters", parameters)
         MainScope().launch {
-            val startedGame = window.fetch("http://localhost:8081/games/${gameSlug}/start", RequestInit(method = "POST", body = serializer.encodeToString(parameterSerializer, parameters)))
+            val startedGame = window.fetch("${js("HOST")}/games/${gameSlug}/start", RequestInit(method = "POST", body = serializer.encodeToString(parameterSerializer, parameters)))
                 .await()
                 .json()
                 .await()
@@ -263,7 +263,8 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     }
 
     useEffectWithCleanup(listOf(instanceId, playerSlotId)) {
-        val socket = WebSocket("ws://localhost:8081/interaction/$instanceId/$playerSlotId")
+        val currentHostWithProtocol: String = if ((js("HOST") as String?).isNullOrEmpty()) window.location.protocol + window.location.host else js("HOST")
+        val socket = WebSocket("${currentHostWithProtocol.replace(Regex("^http"), "ws")}/interaction/$instanceId/$playerSlotId")
         socket.onopen = {
             console.info("open", it)
             setConnected(true)
