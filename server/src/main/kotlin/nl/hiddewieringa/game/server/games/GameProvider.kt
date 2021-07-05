@@ -52,7 +52,6 @@ class GameProvider {
         TwoPlayerId.serializer()
     )
 
-    // TODO how will we handle seed?
     private val taiPanDetails = GameDetails(
         "TaiPan",
         "tai-pan",
