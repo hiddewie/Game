@@ -39,6 +39,10 @@ tasks.withType<KotlinCompile> {
     }
 }
 
+tasks.withType<JavaExec> {
+    environment("SPRING_PROFILES_ACTIVE", "local")
+}
+
 tasks.create<Copy>("copyCompiledFrontend") {
     dependsOn(":frontend:build")
 
