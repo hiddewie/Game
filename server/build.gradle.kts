@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     id("kotlin-jvm-application")
 
-    id("org.springframework.boot") version "2.4.1"
+    id("org.springframework.boot") version "2.5.2"
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
     kotlin("plugin.spring") version "1.5.0"
     kotlin("plugin.serialization") version "1.5.0"
@@ -44,9 +44,9 @@ tasks.create<Copy>("copyCompiledFrontend") {
     from(project(":frontend").file("build/distributions"))
     into(buildDir.resolve("resources/main/public"))
 }
-//tasks.processResources {
-//    dependsOn("copyCompiledFrontend")
-//}
+tasks.processResources {
+    dependsOn("copyCompiledFrontend")
+}
 
 application {
     mainClass.set("nl.hiddewieringa.game.server.GameServerApplicationKt")
