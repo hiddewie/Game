@@ -320,7 +320,11 @@ val TaiPanComponent = functionalComponent<GameUiProps<TaiPanPlayerState, TaiPanP
                                 }
                             }
                             TaiPanPlayerStateType.PASS_DRAGON -> {
-                                div {
+                                styledDiv {
+                                    css {
+                                        visibility = if (gameState.playersToPlay.contains(playerId)) Visibility.visible else Visibility.hidden
+                                    }
+
                                     styledDiv {
                                         css {
                                             textAlign = TextAlign.center
