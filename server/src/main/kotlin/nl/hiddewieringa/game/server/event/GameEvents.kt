@@ -18,6 +18,7 @@ import nl.hiddewieringa.game.core.Event
 import nl.hiddewieringa.game.server.games.GameProvider
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -44,17 +45,6 @@ data class GameEvent(
     val serializedPlayerState: String,
 )
 
-@ConfigurationProperties("postgres")
-class PostgresConfiguration {
-
-    var host: String = "127.0.0.1"
-    var port: Int = 5432
-    lateinit var database: String
-    lateinit var user: String
-    lateinit var password: String
-
-}
-
 @Configuration
 class PostgresEventSetup {
 
@@ -63,18 +53,14 @@ class PostgresEventSetup {
         Vertx.vertx()
 
     @Bean
-    fun postgresConnectOptions(postgresConfiguration: PostgresConfiguration): PgConnectOptions =
-        PgConnectOptions()
-            .setPort(postgresConfiguration.port)
-            .setHost(postgresConfiguration.host)
-            .setDatabase(postgresConfiguration.database)
-            .setUser(postgresConfiguration.user)
-            .setPassword(postgresConfiguration.password)
+    fun postgresConnectOptions(@Value("\${database.url}") url: String): PgConnectOptions =
+        PgConnectOptions.fromUri(url)
 
     @Bean
     fun postgresPoolOptions(): PoolOptions =
-        PoolOptions()
-            .setMaxSize(5)
+        PoolOptions().apply {
+            maxSize = 5
+        }
 
     @Bean(destroyMethod = "close")
     fun postgresClient(vertx: Vertx, connectOptions: PgConnectOptions, poolOptions: PoolOptions): SqlClient =
