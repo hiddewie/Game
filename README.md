@@ -47,3 +47,19 @@ Run the tests with `./gradlew test`.
   - Games should manage some kind of state (game state and player specific state), and be more event driven internally, instead of imperative.
 
 - CLI interface for playing games
+
+### Publishing
+
+Publish the application as a Docker image to Heroku with
+
+```bash
+./gradlew jib --image registry.heroku.com/hiddewie-game/web
+```
+
+### Releasing
+
+Release the pushed version with
+
+```bash
+heroku container:release --app hiddewie-game web
+```
