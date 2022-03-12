@@ -254,7 +254,7 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
     val (playerId, setPlayerId) = useState<String?>(null)
     val (gameEvents, addGameEvent) = useReducer<Array<String>, String>({ state, action -> arrayOf(action) + state }, emptyArray())
 
-    val webSocket = useRef<WebSocket?>(null)
+    val webSocket = useRef<WebSocket>(null)
 
     val stateSerializer = when (gameSlug) {
         "tic-tac-toe" -> TicTacToePlayerState.serializer()
