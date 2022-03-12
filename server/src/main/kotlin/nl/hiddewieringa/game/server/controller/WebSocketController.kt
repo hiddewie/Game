@@ -85,8 +85,7 @@ class WebSocketController(
 
         val wrappedEventSerializer = WrappedEvent.serializer(gameDetails.playerStateSerializer, gameDetails.playerIdSerializer)
 
-        // The initial state is published directly
-        // TODO modify events to be player specific, cleaned of information not destined for a player
+        // The initial player state is published directly
         val initialStateFlux = mono {
             val initialState = gameDetails.playerState.invoke(gameInstance.state, playerId)
             logger.info("Initial websocket message ${session.stateMessage(initialState, playerId, wrappedEventSerializer).payloadAsText}")
