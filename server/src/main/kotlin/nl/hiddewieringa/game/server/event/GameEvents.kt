@@ -1,6 +1,8 @@
 package nl.hiddewieringa.game.server.event
 
 import io.vertx.core.Vertx
+import io.vertx.core.net.TrustOptions
+import io.vertx.core.net.impl.TrustAllTrustManager
 import io.vertx.pgclient.PgConnectOptions
 import io.vertx.pgclient.PgPool
 import io.vertx.pgclient.pubsub.PgSubscriber
@@ -19,7 +21,6 @@ import nl.hiddewieringa.game.server.games.GameProvider
 import org.springframework.beans.factory.DisposableBean
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Service
@@ -53,8 +54,20 @@ class PostgresEventSetup {
         Vertx.vertx()
 
     @Bean
-    fun postgresConnectOptions(@Value("\${database.url}") url: String): PgConnectOptions =
-        PgConnectOptions.fromUri(url)
+    fun postgresConnectOptions(
+        @Value("\${database.url}") url: String,
+        @Value("\${database.ssl}") enableSsl: Boolean,
+    ): PgConnectOptions {
+        logger.info { "Database connection URL: '$url', SSL enabled: $enableSsl" }
+        return PgConnectOptions.fromUri(url)
+            .apply {
+                if (enableSsl) {
+                    isSsl = enableSsl
+                    isTrustAll = true
+                    trustOptions = TrustOptions.wrap(TrustAllTrustManager.INSTANCE)
+                }
+            }
+    }
 
     @Bean
     fun postgresPoolOptions(): PoolOptions =
@@ -72,6 +85,8 @@ class PostgresEventSetup {
             .reconnectPolicy { retries ->
                 100 * 2.0.pow(retries.toDouble()).roundToLong()
             }
+
+    companion object : KLogging()
 
 }
 
@@ -130,7 +145,7 @@ class PostgresPubSubGameEvents(
             .query("NOTIFY \"$EVENT_CHANNEL_NAME\", '$escapedMessage'")
             .execute { ar ->
                 if (ar.failed()) {
-                    logger.warn { "Failed to publish message '$message', cause ${ar.cause()}" }
+                    logger.warn("Failed to publish message '$message', cause ${ar.cause()}", ar.cause())
                 }
             }
     }

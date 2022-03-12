@@ -27,10 +27,10 @@ dependencies {
 
     // Database
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    runtimeOnly("com.h2database:h2")
 
     // Postgres events
     implementation("io.vertx:vertx-pg-client:4.2.5")
+    runtimeOnly("org.postgresql:postgresql")
 
     // Logging
     implementation("io.github.microutils:kotlin-logging:1.12.0")
@@ -62,4 +62,17 @@ tasks.processResources {
 
 application {
     mainClass.set("nl.hiddewieringa.game.server.GameServerApplicationKt")
+}
+
+jib {
+    from.image = "gcr.io/distroless/java11-debian11"
+
+    container {
+        jvmFlags = listOf(
+            "-Xss512k",
+            "-Xmx400m",
+            "-Xms400m",
+            "-XX:+UseContainerSupport"
+        )
+    }
 }
