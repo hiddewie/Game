@@ -35,7 +35,7 @@ kotlin {
                 // Testing
                 implementation(kotlin("test-junit"))
                 implementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-                runtimeOnly("org.junit.jupiter:junit-jupiter-engine")
+                runtimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
             }
         }
 

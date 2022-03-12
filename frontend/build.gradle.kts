@@ -7,8 +7,7 @@ group = "nl.hiddewieringa.game"
 version = "0.0.1-SNAPSHOT"
 
 repositories {
-    maven("https://dl.bintray.com/kotlin/kotlin-eap")
-    maven("https://kotlin.bintray.com/kotlin-js-wrappers/")
+    maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-js-wrappers")
     mavenCentral()
     jcenter()
 }

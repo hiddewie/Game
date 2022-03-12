@@ -38,8 +38,6 @@ dependencies {
     implementation("com.google.cloud:google-cloud-pubsub")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    // TODO Needed?
-    testImplementation("io.projectreactor:reactor-test")
 }
 
 tasks.withType<KotlinCompile> {
