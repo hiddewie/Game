@@ -6,6 +6,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.Serializable
 import nl.hiddewieringa.game.core.*
 
+@Serializable
 sealed class TicTacToeState : GameState<TicTacToeState>
 
 class TicTacToePlay(

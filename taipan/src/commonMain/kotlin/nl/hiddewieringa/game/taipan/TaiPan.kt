@@ -1,10 +1,12 @@
 package nl.hiddewieringa.game.taipan
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.taipan.card.*
 import kotlin.random.Random
 
+@Serializable
 sealed class TaiPanState : GameState<TaiPanState>
 
 fun nextPlayer(playerId: TwoTeamPlayerId): TwoTeamPlayerId =
@@ -176,6 +178,7 @@ internal fun cardsContainWish(wish: Int, previousCards: CardCombination, cards: 
     }
 }
 
+@Serializable
 // TODO rename tai pan receive cards
 data class TaiPan(
     private val parameters: TaiPanGameParameters,
@@ -273,6 +276,7 @@ data class TaiPan(
                 IllegalAction("Illegal move", playerId, action)
         }
 
+    @Transient
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
         listOf(
             GameDecision(points.any { (_, p) -> p >= parameters.points } && points.getValue(TwoTeamTeamId.TEAM1) != points.getValue(TwoTeamTeamId.TEAM2)) {
@@ -298,6 +302,7 @@ data class TaiPan(
         )
 }
 
+@Serializable
 // TODO rename exchange
 data class TaiPanPassCards(
     private val parameters: TaiPanGameParameters,
@@ -371,6 +376,7 @@ data class TaiPanPassCards(
                 IllegalAction("Illegal move", playerId, action)
         }
 
+    @Transient
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
         listOf(
             GameDecision(passedCards.size == 4) {
@@ -392,6 +398,7 @@ data class TaiPanPassCards(
     }
 }
 
+@Serializable
 data class TaiPanPlayTrick(
     private val parameters: TaiPanGameParameters,
     val points: Map<TwoTeamTeamId, Int>,
@@ -424,7 +431,7 @@ data class TaiPanPlayTrick(
         TwoTeamPlayerId.values()
             .find { playerId -> playerCards.getValue(playerId).any { it is Mahjong } }
             ?: throw IllegalStateException("No player has the Mahjong"),
-        TwoTeamPlayerId.values().associate { it to mutableSetOf<Card>() },
+        TwoTeamPlayerId.values().associateWith { mutableSetOf<Card>() },
         emptySet(),
         null,
         0,
@@ -564,6 +571,7 @@ data class TaiPanPlayTrick(
                 IllegalAction("Illegal move", playerId, action)
         }
 
+    @Transient
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
         listOf(
             (playerCards.keys - outOfCardOrder)
@@ -637,6 +645,7 @@ data class TaiPanPlayTrick(
         )
 }
 
+@Serializable
 // TODO implement automatic dragon pass in case of no difference
 data class TaiPanDragonPass(
     val trick: TaiPanPlayTrick,
@@ -667,10 +676,12 @@ data class TaiPanDragonPass(
                 IllegalAction("Not allowed", playerId, action)
         }
 
+    @Transient
     override val gameDecisions: List<GameDecision<TaiPanEvent>> =
         emptyList()
 }
 
+@Serializable
 data class TaiPanFinalScore(
     val teamWon: TwoTeamTeamId,
     val points: Map<TwoTeamTeamId, Int>,
@@ -679,6 +690,7 @@ data class TaiPanFinalScore(
 @Serializable
 data class TaiPanGameParameters(val points: Int, val seed: Long) : GameParameters
 
+@Serializable
 data class MahjongWish(
     val wish: Int? = null,
 ) {
