@@ -147,6 +147,7 @@ class GameInstanceProvider(
             .map(::hydrateGameInstance)
             .orElse(null)
 
+    // TODO dont hydrate state
     fun openGames(gameSlug: String): List<GameInstance<*, *>> =
         gameInstanceRepository.openGames(gameSlug)
             .map(::hydrateGameInstance)

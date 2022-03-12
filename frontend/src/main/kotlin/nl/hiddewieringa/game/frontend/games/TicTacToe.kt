@@ -23,7 +23,11 @@ val TicTacToeParametersComponent = functionalComponent<ParametersProps<TicTacToe
     }
 }
 
-val emptyBoard = arrayOf(arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null), arrayOf<GameMark?>(null, null, null))
+val emptyBoard = listOf(
+    listOf<GameMark?>(null, null, null),
+    listOf<GameMark?>(null, null, null),
+    listOf<GameMark?>(null, null, null)
+)
 
 val TicTacToeComponent = functionalComponent<GameUiProps<TicTacToePlayerState, TicTacToePlayerActions>> { props ->
     val gameState = props.gameState

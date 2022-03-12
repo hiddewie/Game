@@ -7,7 +7,7 @@ import nl.hiddewieringa.game.tictactoe.*
 @Serializable
 class TicTacToePlayerState(
     val playerToPlay: TwoPlayerId?,
-    val board: Array<Array<GameMark?>>,
+    val board: List<List<GameMark?>>,
     val playerWon: TwoPlayerId?,
     val gameFinished: Boolean,
 )

@@ -4,21 +4,23 @@ import kotlinx.coroutines.channels.ProducerScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import nl.hiddewieringa.game.core.*
 
 @Serializable
 sealed class TicTacToeState : GameState<TicTacToeState>
 
+@Serializable
 class TicTacToePlay(
-    val board: Array<Array<GameMark?>>,
+    val board: List<List<GameMark?>>,
     val playerToPlay: TwoPlayerId,
 ) : TicTacToeState(), IntermediateGameState<TwoPlayerId, TicTacToePlayerActions, TicTacToeEvent, TicTacToeState> {
 
     constructor() : this(
-        arrayOf(
-            arrayOf(null, null, null),
-            arrayOf(null, null, null),
-            arrayOf(null, null, null)
+        listOf(
+            listOf(null, null, null),
+            listOf(null, null, null),
+            listOf(null, null, null)
         ),
         TwoPlayerId.PLAYER1
     )
@@ -31,8 +33,15 @@ class TicTacToePlay(
             }
 
             is PlayerPlacedMark -> {
-                val newBoard = board.map { it.copyOf() }.toTypedArray()
-                newBoard[event.location.x][event.location.y] = event.mark
+                val newBoard = board.mapIndexed { i, gameMarks ->
+                    if (i == event.location.x) {
+                        gameMarks.mapIndexed { j, original ->
+                            if (j == event.location.y) event.mark else original
+                        }
+                    } else {
+                        gameMarks
+                    }
+                }
 
                 TicTacToePlay(
                     newBoard,
@@ -65,6 +74,7 @@ class TicTacToePlay(
                 IllegalMove(playerId)
         }
 
+    @Transient
     override val gameDecisions: List<GameDecision<TicTacToeEvent>> =
         listOf(
             GameDecision(noPlayerWon(board)) {
@@ -78,17 +88,17 @@ class TicTacToePlay(
                 },
         )
 
-    private fun noPlayerWon(board: Array<Array<GameMark?>>): Boolean =
+    private fun noPlayerWon(board: List<List<GameMark?>>): Boolean =
         board.all { it.all { value -> value != null } }
 
-    private fun playerWon(board: Array<Array<GameMark?>>): GameMark? =
+    private fun playerWon(board: List<List<GameMark?>>): GameMark? =
         when {
             playerWon(board, Circle) -> Circle
             playerWon(board, Cross) -> Cross
             else -> null
         }
 
-    private fun playerWon(board: Array<Array<GameMark?>>, mark: GameMark): Boolean =
+    private fun playerWon(board: List<List<GameMark?>>, mark: GameMark): Boolean =
         (0 until 3).any { j -> (0 until 3).all { i -> board[j][i] == mark } } ||
             (0 until 3).any { j -> (0 until 3).all { i -> board[i][j] == mark } } ||
             (0 until 3).all { i -> board[i][i] == mark } ||
@@ -146,9 +156,14 @@ sealed class TicTacToePlayerActions : PlayerActions
 @Serializable
 data class PlaceMarkLocation(val location: Location) : TicTacToePlayerActions()
 
+@Serializable
 sealed class TicTacToeGameResult : TicTacToeState()
-class PlayerWon(val board: Array<Array<GameMark?>>, val player: TwoPlayerId) : TicTacToeGameResult()
-class NoPlayerWon(val board: Array<Array<GameMark?>>) : TicTacToeGameResult()
+
+@Serializable
+class PlayerWon(val board: List<List<GameMark?>>, val player: TwoPlayerId) : TicTacToeGameResult()
+
+@Serializable
+class NoPlayerWon(val board: List<List<GameMark?>>) : TicTacToeGameResult()
 
 class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent, TicTacToePlayerActions, TwoPlayerId, TicTacToeState> {
 
@@ -181,7 +196,7 @@ class FreeSpaceTicTacToePlayer : Player<TicTacToeGameParameters, TicTacToeEvent,
             }
         }
 
-    private fun play(board: Array<Array<GameMark?>>): Location {
+    private fun play(board: List<List<GameMark?>>): Location {
         board.forEachIndexed { i, row ->
             row.forEachIndexed { j, item ->
                 if (item === null) {

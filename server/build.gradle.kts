@@ -29,13 +29,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     runtimeOnly("com.h2database:h2")
 
+    // Postgres events
+    implementation("io.vertx:vertx-pg-client:4.2.5")
+
     // Logging
     implementation("io.github.microutils:kotlin-logging:1.12.0")
-
-    // Google Cloud
-    implementation(platform("com.google.cloud:libraries-bom:18.0.0"))
-    implementation("com.google.cloud:google-cloud-core")
-    implementation("com.google.cloud:google-cloud-pubsub")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
