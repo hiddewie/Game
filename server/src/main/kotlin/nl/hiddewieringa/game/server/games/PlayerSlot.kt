@@ -14,7 +14,7 @@ class PlayerSlot<A : PlayerActions, E : Event, S : Any, PID : PlayerId>(
     val receiveChannel: SharedFlow<Pair<E, S>>,
 ) {
 
-    var referenceCount = AtomicInteger()
+    var referenceCount = AtomicInteger(0)
 
     fun increaseReference() {
         referenceCount.incrementAndGet()

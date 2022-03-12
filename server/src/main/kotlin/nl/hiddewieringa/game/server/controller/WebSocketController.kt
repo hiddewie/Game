@@ -3,6 +3,7 @@ package nl.hiddewieringa.game.server.controller
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
@@ -12,11 +13,13 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import mu.KLogging
 import nl.hiddewieringa.game.core.Event
+import nl.hiddewieringa.game.core.GameState
 import nl.hiddewieringa.game.core.PlayerActions
 import nl.hiddewieringa.game.core.PlayerId
+import nl.hiddewieringa.game.server.games.GameDetails
 import nl.hiddewieringa.game.server.games.GameInstance
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
-import nl.hiddewieringa.game.server.games.PlayerSlot
+import nl.hiddewieringa.game.server.games.GameProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.stereotype.Component
@@ -38,34 +41,36 @@ data class WrappedEvent<S : Any, PID : PlayerId>(val eventDescription: String?, 
 @Component
 class WebSocketController(
     val gameInstanceProvider: GameInstanceProvider,
+    val gameProvider: GameProvider,
 ) : WebSocketHandler {
 
     private val template = UriTemplate(URI_TEMPLATE)
-    private val serializer = Json {}
+    private val serializer = Json.Default
 
     override fun handle(session: WebSocketSession): Mono<Void> {
         val path = session.handshakeInfo.uri.path
-        val instanceId: UUID = UUID.fromString(template.match(path)["instanceId"])
-        val playerSlotId: UUID = UUID.fromString(template.match(path)["playerSlotId"])
+        val instanceId = UUID.fromString(template.match(path)["instanceId"])
+        val playerSlotId = UUID.fromString(template.match(path)["playerSlotId"])
 
-        return handle(playerSlotId, instanceId, session)
+        return handleRequest(playerSlotId, instanceId, session)
     }
 
-    private fun handle(playerSlotId: UUID, instanceId: UUID, session: WebSocketSession): Mono<Void> {
+    private fun handleRequest(playerSlotId: UUID, instanceId: UUID, session: WebSocketSession): Mono<Void> {
         val gameInstance = gameInstanceProvider.gameInstance(instanceId)
-        return handle(playerSlotId, session, gameInstance)
+        return handleGameInstance(playerSlotId, session, gameInstance)
     }
 
-    private fun <A : PlayerActions, E : Event, S : Any, PID : PlayerId> handle(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<A, E, S, PID>?): Mono<Void> {
+    private fun <S : GameState<S>, PID : PlayerId> handleGameInstance(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<S, PID>?): Mono<Void> {
         // If the instance or player slot does not exist, close the connection
         val playerSlot = gameInstance?.playerSlots?.get(playerSlotId)
             ?: return Mono.empty()
 
-        return handle(playerSlotId, session, gameInstance, playerSlot)
+        val gameDetails = gameProvider.bySlug(gameInstance.gameSlug)
+        return handle(playerSlotId, session, gameInstance, gameDetails as GameDetails<*, *, *, *, PID, *, S, *>, playerSlot)
     }
 
-    private fun <A : PlayerActions, E : Event, S : Any, PID : PlayerId> handle(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<A, E, S, PID>, playerSlot: PlayerSlot<A, E, S, PID>): Mono<Void> {
-        playerSlot.increaseReference()
+    private fun <A : PlayerActions, E : Event, S : GameState<S>, PS : Any, PID : PlayerId> handle(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<S, PID>, gameDetails: GameDetails<*, *, A, E, PID, *, S, PS>, playerId: PID): Mono<Void> {
+        gameInstanceProvider.increasePlayerSlotReference(gameInstance.id, playerSlotId)
 
         CoroutineScope(Dispatchers.Default).launch {
             session.receive()
@@ -73,24 +78,27 @@ class WebSocketController(
                 .map(WebSocketMessage::retain)
                 .asFlow()
                 .collect {
-                    playerSlot.sendChannel.send(readAction(it, gameInstance.actionSerializer))
+                    gameInstanceProvider.applyPlayerAction<A, E, PID, S, PS>(gameInstance.id, playerId, readAction(it, gameDetails.actionSerializer))
                     it.release()
                 }
         }
 
-        val wrappedEventSerializer = WrappedEvent.serializer(gameInstance.stateSerializer, gameInstance.playerIdSerializer)
+        val wrappedEventSerializer = WrappedEvent.serializer(gameDetails.playerStateSerializer, gameDetails.playerIdSerializer)
 
         // The initial state is published directly
         // TODO modify events to be player specific, cleaned of information not destined for a player
         val initialStateFlux = mono {
-            val initialState = gameInstance.playerState(playerSlotId)
-            session.stateMessage(initialState, playerSlot.playerId, wrappedEventSerializer)
+            val initialState = gameDetails.playerState.invoke(gameInstance.state, playerId)
+            logger.info("Initial websocket message ${session.stateMessage(initialState, playerId, wrappedEventSerializer).payloadAsText}")
+            session.stateMessage(initialState, playerId, wrappedEventSerializer)
         }
-        val events = playerSlot.receiveChannel.asFlux()
-            .map { (event, state) -> session.eventMessage(event, state, playerSlot.playerId, wrappedEventSerializer) }
+
+        val events = gameInstanceProvider.gameInstanceEvents<E, PS>(gameInstance.id, playerSlotId)
+                .map { (event, state) -> session.eventMessage(event, state, playerId, wrappedEventSerializer) }
+                .asFlux()
 
         return session.send(initialStateFlux.concatWith(events))
-            .doFinally { playerSlot.decreaseReference() }
+            .doFinally { gameInstanceProvider.decreasePlayerSlotReference(gameInstance.id, playerSlotId) }
     }
 
     private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.eventMessage(event: E, state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =

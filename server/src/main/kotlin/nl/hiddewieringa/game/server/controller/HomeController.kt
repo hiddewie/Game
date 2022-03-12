@@ -14,7 +14,7 @@ class HomeController(
     val gameProvider: GameProvider,
     val gameInstanceProvider: GameInstanceProvider,
 ) {
-    val serializer = Json {}
+    private val serializer = Json.Default
 
     data class GameListItem(val slug: String, val name: String, val description: String)
 
@@ -31,12 +31,13 @@ class HomeController(
         gameInstanceProvider.openGames(gameSlug)
             .map(::generateOpenGames)
 
-    private fun generateOpenGames(gameInstance: GameInstance<*, *, *, *>) =
+    private fun generateOpenGames(gameInstance: GameInstance<*, *>) =
         OpenGame(
             gameInstance.id,
             gameInstance.playerSlots
-                .filterValues { it.referenceCount.get() == 0 }
-                .map { (key, value) -> OpenGamePlayerSlot(key, value.playerId.toString()) }
+                    // TODO only open slots
+//                .filterValues { it.referenceCount.get() == 0 }
+                .map { (key, value) -> OpenGamePlayerSlot(key, value.toString()) }
         )
 
     @PostMapping("games/{gameSlug}/start")

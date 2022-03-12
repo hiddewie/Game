@@ -29,7 +29,8 @@ data class GameDetails<
     val parameterSerializer: KSerializer<M>,
     val actionSerializer: KSerializer<A>,
     val eventSerializer: KSerializer<E>,
-    val stateSerializer: KSerializer<PS>,
+    val stateSerializer: KSerializer<S>,
+    val playerStateSerializer: KSerializer<PS>,
     val playerIdSerializer: KSerializer<PID>,
 )
 
@@ -48,6 +49,7 @@ class GameProvider {
         TicTacToeGameParameters.serializer(),
         TicTacToePlayerActions.serializer(),
         TicTacToeEvent.serializer(),
+        TicTacToeState.serializer(),
         TicTacToePlayerState.serializer(),
         TwoPlayerId.serializer()
     )
@@ -64,6 +66,7 @@ class GameProvider {
         TaiPanGameParameters.serializer(),
         TaiPanPlayerActions.serializer(),
         TaiPanEvent.serializer(),
+        TaiPanState.serializer(),
         TaiPanPlayerState.serializer(),
         TwoTeamPlayerId.serializer()
     )
@@ -71,11 +74,12 @@ class GameProvider {
     private val games = listOf<GameDetails<*, *, *, *, *, *, *, *>>(
         ticTacToeDetails,
         taiPanDetails,
-    )
+    ).associateBy { it.slug }
+    val sortedGames = games.values.sortedBy { it.slug }
 
     fun games(): List<GameDetails<*, *, *, *, *, *, *, *>> =
-        games
+        sortedGames
 
     fun bySlug(gameSlug: String): GameDetails<*, *, *, *, *, *, *, *> =
-        games.first { it.slug == gameSlug }
+        games.getValue(gameSlug)
 }

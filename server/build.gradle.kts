@@ -7,6 +7,7 @@ plugins {
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
     kotlin("plugin.spring") version "1.5.0"
     kotlin("plugin.serialization") version "1.5.0"
+    kotlin("plugin.jpa") version "1.5.0"
     id("com.google.cloud.tools.jib") version "3.1.1"
 }
 
@@ -24,10 +25,20 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
+    // Database
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    runtimeOnly("com.h2database:h2")
+
     // Logging
     implementation("io.github.microutils:kotlin-logging:1.12.0")
 
+    // Google Cloud
+    implementation(platform("com.google.cloud:libraries-bom:18.0.0"))
+    implementation("com.google.cloud:google-cloud-core")
+    implementation("com.google.cloud:google-cloud-pubsub")
+
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // TODO Needed?
     testImplementation("io.projectreactor:reactor-test")
 }
 

@@ -17,17 +17,17 @@ import kotlinx.coroutines.launch
 class GameManager {
 
     suspend fun <
-        M : GameParameters,
-        P : Player<M, E, A, PID, PS>,
-        A : PlayerActions,
-        E : Event,
-        PID : PlayerId,
-        PC : PlayerConfiguration<PID, P>,
-        S : GameState<S>,
-        PS
-        > play(
+            M : GameParameters,
+            P : Player<M, E, A, PID, PS>,
+            A : PlayerActions,
+            E : Event,
+            PID : PlayerId,
+            PC : PlayerConfiguration<PID, P>,
+            S : GameState<S>,
+            PS
+            > play(
         gameStateFactory: (M) -> S,
-        playerFactory: () -> PC,
+        playerFactory: () -> PC, // TODO remove function call
         parameters: M,
         playerState: S.(PID) -> PS,
         gameState: SendChannel<S>
@@ -73,4 +73,50 @@ class GameManager {
 
             result
         }
+
+    fun <A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>> applyPlayerAction(gameState: S, playerId: PID, action: A, eventPublisher: (E, S) -> Unit): S {
+        val gameStateAfterDecisions = applyDecisionActions(gameState, eventPublisher)
+
+        if (gameStateAfterDecisions !is IntermediateGameState<*, *, *, *>) {
+            println("Cannot process player action for finished game")
+            return gameState
+        }
+        println("Game loop: Player $playerId played $action")
+
+        val intermediateState = gameStateAfterDecisions as IntermediateGameState<PID, A, E, S>
+        val event = intermediateState.processPlayerAction(playerId, action)
+
+        println("Game loop: Action caused $event")
+        val stateAfterAction = intermediateState.applyEvent(event)
+        println("Game loop: Game loop: State update processed")
+
+        eventPublisher(event, stateAfterAction)
+
+        return applyDecisionActions(stateAfterAction, eventPublisher)
+    }
+
+    private fun <E : Event, S : GameState<S>> applyDecisionActions(gameState: S, eventPublisher: (E, S) -> Unit, depth: Int = 0): S {
+        if (depth > MAX_DEPTH) {
+            throw IllegalStateException("The maximum depth count $MAX_DEPTH exceeded.")
+        }
+
+        while (gameState is IntermediateGameState<*, *, *, *> && gameState.hasDecision()) {
+            val decision = gameState.gameDecisions.first(GameDecision<out Event>::condition)
+            println("Game loop: Decision $decision found")
+            val decisionEvent = decision.event() as E
+            println("Game loop: Decision generated event $decisionEvent")
+
+            val stateAfterDecision = (gameState as IntermediateGameState<*, *, E, S>).applyEvent(decisionEvent)
+
+            eventPublisher(decisionEvent, stateAfterDecision)
+
+            return applyDecisionActions(stateAfterDecision, eventPublisher, depth + 1)
+        }
+
+        return gameState
+    }
+
+    companion object {
+        private const val MAX_DEPTH = 100
+    }
 }
