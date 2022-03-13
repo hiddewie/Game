@@ -2,7 +2,9 @@ package nl.hiddewieringa.game.server.controller
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
@@ -31,13 +33,16 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriTemplate
 import reactor.core.publisher.Mono
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
 @Serializable
 data class WrappedAction<A : PlayerActions>(val action: A)
 
 @Serializable
-data class WrappedEvent<S : Any, PID : PlayerId>(val eventDescription: String?, val state: S, val playerId: PID)
+data class WrappedEvent<S : Any, PID : PlayerId>(val eventDescription: String?, val state: S?, val playerId: PID?)
 
+@OptIn(ExperimentalTime::class)
 @Component
 class WebSocketController(
     val gameInstanceProvider: GameInstanceProvider,
@@ -93,10 +98,18 @@ class WebSocketController(
         }
 
         val events = gameInstanceProvider.gameInstanceEvents<E, PS>(gameInstance.id, playerSlotId)
-                .map { (event, state) -> session.eventMessage(event, state, playerId, wrappedEventSerializer) }
-                .asFlux()
+            .map { (event, state) -> session.eventMessage(event, state, playerId, wrappedEventSerializer) }
+            .asFlux()
 
-        return session.send(initialStateFlux.concatWith(events))
+        val keepAlive = flow {
+            while (true) {
+                delay(30.seconds)
+                emit(session.emptyEvent(playerId, wrappedEventSerializer))
+            }
+        }
+            .asFlux()
+
+        return session.send(initialStateFlux.concatWith(events).mergeWith(keepAlive))
             .doFinally { gameInstanceProvider.decreasePlayerSlotReference(gameInstance.id, playerSlotId) }
     }
 
@@ -109,6 +122,9 @@ class WebSocketController(
 
     private fun <S : Any, PID : PlayerId> WebSocketSession.stateMessage(state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =
         textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, state, playerId)))
+
+    private fun <S : Any, PID : PlayerId> WebSocketSession.emptyEvent(playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =
+        textMessage(serializer.encodeToString(eventSerializer, WrappedEvent(null, null, playerId)))
 
     companion object : KLogging() {
         const val URI_TEMPLATE = "/interaction/{instanceId}/{playerSlotId}"

@@ -220,12 +220,12 @@ external interface GamePlay : GameSlug {
     val playerSlotId: String
 }
 
-val serializer = Json {}
+val serializer = Json.Default
 
 @Serializable
 class StateEvent<S : Any>(
     val eventDescription: String?,
-    val state: S,
+    val state: S?,
     val playerId: String?,
 )
 
@@ -276,7 +276,9 @@ val PlayComponent = functionalComponent<GamePlay> { params ->
         socket.onmessage = {
             val stateEvent = serializer.decodeFromString(StateEvent.serializer(stateSerializer), it.data.unsafeCast<String>())
             console.log("message", it.data, "event", stateEvent.eventDescription, "state", stateEvent.state, "player", stateEvent.playerId)
-            setGameState(stateEvent.state)
+            if (stateEvent.state != null) {
+                setGameState(stateEvent.state)
+            }
             setPlayerId(stateEvent.playerId)
             if (stateEvent.eventDescription != null) {
                 addGameEvent(stateEvent.eventDescription)
