@@ -1,3 +1,4 @@
+
 package nl.hiddewieringa.game.taipan
 
 import kotlinx.coroutines.*
@@ -18,7 +19,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @FlowPreview
 class TaiPanTest {
@@ -342,13 +343,13 @@ class TaiPanTest {
         }
 
         launch {
-            withTimeout(Duration.seconds(2)) {
+            withTimeout(2.seconds) {
                 val gameResult = GameContext(players, game, gamePlayerChannel, Channel(capacity = Channel.UNLIMITED), playerGameChannel, { this }).playGame()
                 assertEquals(TaiPanFinalScore(TwoTeamTeamId.TEAM2, mapOf(TwoTeamTeamId.TEAM1 to 0, TwoTeamTeamId.TEAM2 to 200)), gameResult)
             }
         }
 
-        withTimeout(Duration.seconds(1)) {
+        withTimeout(1.seconds) {
             playerAsserts.await()
         }
         if (!gamePlayerChannel.isEmpty) {
