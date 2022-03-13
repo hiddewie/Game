@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.targets.js.nodejs.NodeJsRootExtension
 
 plugins {
     kotlin("js")
-    kotlin("plugin.serialization") version "1.5.0"
+    kotlin("plugin.serialization") version "1.6.10"
 }
 
 group = "nl.hiddewieringa.game"
@@ -61,7 +61,7 @@ dependencies {
     implementation(npm("styled-components", "5.2.3"))
     implementation(npm("inline-style-prefixer", "~6.0.0"))
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
 
     // Games
     implementation(project(":taipan"))

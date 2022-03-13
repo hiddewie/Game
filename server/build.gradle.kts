@@ -5,9 +5,9 @@ plugins {
 
     id("org.springframework.boot") version "2.5.2"
     id("io.spring.dependency-management") version "1.0.10.RELEASE"
-    kotlin("plugin.spring") version "1.5.0"
-    kotlin("plugin.serialization") version "1.5.0"
-    kotlin("plugin.jpa") version "1.5.0"
+    kotlin("plugin.spring") version "1.6.10"
+    kotlin("plugin.serialization") version "1.6.10"
+    kotlin("plugin.jpa") version "1.6.10"
     id("com.google.cloud.tools.jib") version "3.1.1"
 }
 
@@ -57,7 +57,7 @@ tasks.create<Copy>("copyCompiledFrontend") {
     into(buildDir.resolve("resources/main/public"))
 }
 tasks.processResources {
-    dependsOn("copyCompiledFrontend")
+//    dependsOn("copyCompiledFrontend")
 }
 
 application {
