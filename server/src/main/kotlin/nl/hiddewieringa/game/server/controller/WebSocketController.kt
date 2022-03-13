@@ -75,7 +75,7 @@ class WebSocketController(
     }
 
     private fun <A : PlayerActions, E : Event, S : GameState<S>, PS : Any, PID : PlayerId> handle(playerSlotId: UUID, session: WebSocketSession, gameInstance: GameInstance<S, PID>, gameDetails: GameDetails<*, *, A, E, PID, *, S, PS>, playerId: PID): Mono<Void> {
-        gameInstanceProvider.increasePlayerSlotReference(gameInstance.id, playerSlotId)
+        gameInstanceProvider.increasePlayerSlotLock(gameInstance.id, playerSlotId)
 
         CoroutineScope(Dispatchers.Default).launch {
             session.receive()
@@ -84,6 +84,7 @@ class WebSocketController(
                 .asFlow()
                 .collect {
                     gameInstanceProvider.applyPlayerAction<A, E, PID, S, PS>(gameInstance.id, playerId, readAction(it, gameDetails.actionSerializer))
+                    gameInstanceProvider.increasePlayerSlotLock(gameInstance.id, playerSlotId)
                     it.release()
                 }
         }
@@ -110,7 +111,7 @@ class WebSocketController(
             .asFlux()
 
         return session.send(initialStateFlux.concatWith(events).mergeWith(keepAlive))
-            .doFinally { gameInstanceProvider.decreasePlayerSlotReference(gameInstance.id, playerSlotId) }
+            .doFinally { gameInstanceProvider.removePlayerSlotLock(gameInstance.id, playerSlotId) }
     }
 
     private fun <E : Event, S : Any, PID : PlayerId> WebSocketSession.eventMessage(event: E, state: S, playerId: PID, eventSerializer: KSerializer<WrappedEvent<S, PID>>) =

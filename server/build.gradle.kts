@@ -41,7 +41,8 @@ dependencies {
 tasks.withType<KotlinCompile> {
     kotlinOptions {
         freeCompilerArgs = freeCompilerArgs + listOf(
-            "-Xjsr305=strict"
+            "-Xjsr305=strict",
+            "-Xjvm-default=all"
         )
     }
 }

@@ -9,15 +9,16 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.MapSerializer
-import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import mu.KLogging
 import nl.hiddewieringa.game.core.*
 import nl.hiddewieringa.game.server.data.GameInstanceRepository
+import nl.hiddewieringa.game.server.data.PlayerSlot
+import nl.hiddewieringa.game.server.data.PlayerSlotRepository
 import nl.hiddewieringa.game.server.event.GameEvents
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.*
 import java.util.concurrent.Executors
 
@@ -34,11 +35,11 @@ class GameInstanceProvider(
     private val gameManager: GameManager,
     private val gameProvider: GameProvider,
     private val gameInstanceRepository: GameInstanceRepository,
+    private val playerSlotRepository: PlayerSlotRepository,
 ) {
 
     private val serializer = Json.Default
 
-    //    private val instances: MutableMap<UUID, GameInstance<*, *, *, *>> = ConcurrentHashMap()
     private val threadPoolDispatcher = Executors.newWorkStealingPool().asCoroutineDispatcher()
 
     suspend fun <
@@ -128,9 +129,19 @@ class GameInstanceProvider(
             nl.hiddewieringa.game.server.data.GameInstance(
                 instanceId,
                 gameDetails.slug,
-                serializePlayerSlots(gameDetails.playerIdSerializer, playerSlots),
                 serializeGameState(gameDetails.stateSerializer, initialGameState),
-            )
+                mutableMapOf()
+            ).apply {
+                (this.playerSlots as MutableMap<UUID, PlayerSlot>).putAll(
+                    playerSlots.mapValues { (id, playerId) ->
+                        PlayerSlot(
+                            id,
+                            this,
+                            serializer.encodeToString(gameDetails.playerIdSerializer, playerId),
+                            Instant.EPOCH,
+                        )
+                    })
+            }
             // TODO
 //            { playerId: PID ->
 //                val deferredResult = CompletableDeferred<S>()
@@ -145,6 +156,7 @@ class GameInstanceProvider(
         return instanceId
     }
 
+    @Transactional
     fun gameInstance(instanceId: UUID): GameInstance<*, *>? =
         gameInstanceRepository.findById(instanceId)
             .map(::hydrateGameInstance)
@@ -153,47 +165,45 @@ class GameInstanceProvider(
     // TODO dont hydrate state
     @Transactional
     fun openGames(gameSlug: String): List<OpenGame> =
-        gameInstanceRepository.openGames(gameSlug)
+        gameInstanceRepository.openGames(gameSlug, Instant.now())
             .map(::hydrateOpenGame)
 
     private fun hydrateGameInstance(gameInstance: nl.hiddewieringa.game.server.data.GameInstance): GameInstance<*, *> =
         hydrateGameInstance(gameInstance, gameProvider.bySlug(gameInstance.gameSlug))
 
     private fun hydrateOpenGame(gameInstance: nl.hiddewieringa.game.server.data.GameInstance): OpenGame =
-        hydrateOpenGame(gameInstance, gameProvider.bySlug(gameInstance.gameSlug))
-
-    private fun <S : GameState<S>> hydrateGameInstance(gameInstance: nl.hiddewieringa.game.server.data.GameInstance, gameDetails: GameDetails<*, *, *, *, *, *, S, *>): GameInstance<*, *> =
-         GameInstance(
-            gameInstance.id,
-            gameDetails.slug,
-            deserializeGameState(gameDetails.stateSerializer, gameInstance.serializedState),
-            deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots),
-        )
-
-    private fun <S : GameState<S>> hydrateOpenGame(gameInstance: nl.hiddewieringa.game.server.data.GameInstance, gameDetails: GameDetails<*, *, *, *, *, *, S, *>): OpenGame =
         OpenGame(
             gameInstance.id,
-            deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots)
-                // TODO only open slots
-//                .filterValues { it.referenceCount.get() == 0 }
+            gameInstance.playerSlots
+                .filterValues { it.lockedUntil <= Instant.now() }
                 .map { (key, value) -> OpenGamePlayerSlot(key, value.toString()) }
         )
 
+    private fun <S : GameState<S>> hydrateGameInstance(gameInstance: nl.hiddewieringa.game.server.data.GameInstance, gameDetails: GameDetails<*, *, *, *, *, *, S, *>): GameInstance<*, *> =
+        GameInstance(
+            gameInstance.id,
+            gameDetails.slug,
+            deserializeGameState(gameDetails.stateSerializer, gameInstance.serializedState),
+            gameInstance.playerSlots.mapValues { serializer.decodeFromString(gameDetails.playerIdSerializer, it.value.serializedPlayerId) }
+        )
+
     @Transactional
-    fun <A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>, PS: Any> applyPlayerAction(instanceId: UUID, playerId: PID, action: A) {
+    fun <A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>, PS : Any> applyPlayerAction(instanceId: UUID, playerId: PID, action: A) {
         gameInstanceRepository.findById(instanceId).ifPresent { gameInstance ->
             val gameDetails = gameProvider.bySlug(gameInstance.gameSlug)
             val gameState = deserializeGameState(gameDetails.stateSerializer, gameInstance.serializedState) as S
-            val playerSlots = deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots)
 
             gameManager.applyPlayerAction(gameState, playerId, action) { event: E, state: S ->
 
                 logger.info("Persisting game state for instance $instanceId")
-                gameInstanceRepository.save(gameInstance.copy(serializedState = serializeGameState(gameDetails.stateSerializer as KSerializer<S>, state)))
+                gameInstance.serializedState = serializeGameState(gameDetails.stateSerializer as KSerializer<S>, state)
+                gameInstanceRepository.save(gameInstance)
 
-                playerSlots.forEach { (playerSlotId, playerId) ->
+                // TODO check if game is finished
+
+                gameInstance.playerSlots.values.forEach { playerSlot ->
                     val playerStateFunction = gameDetails.playerState as (S.(PID) -> PS)
-                    gameEvents.publish(gameInstance.gameSlug, instanceId, playerSlotId, event, playerStateFunction.invoke(state, playerId as PID))
+                    gameEvents.publish(gameInstance.gameSlug, instanceId, playerSlot.id, event, playerStateFunction.invoke(state, playerId))
                 }
             }
         }
@@ -202,28 +212,17 @@ class GameInstanceProvider(
     fun <E : Event, S : Any> gameInstanceEvents(instanceId: UUID, playerSlotId: UUID): Flow<Pair<E, S>> =
         gameEvents.receiveEvents(instanceId, playerSlotId)
 
-    // TODO
     @Transactional
-    fun increasePlayerSlotReference(instanceId: UUID, playerSlotId: UUID) {
-        gameInstanceRepository.findById(instanceId).ifPresent { gameInstance ->
-            logger.info("Increasing player slot reference for instance $instanceId and player slot $playerSlotId")
-            val gameDetails = gameProvider.bySlug(gameInstance.gameSlug)
-//            val playerSlots = deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots)
-//            // TODO count references
-//            gameInstanceRepository.save(gameInstance.copy(serializedPlayerSlots = serializePlayerSlots(gameDetails.playerIdSerializer, playerSlots)))
-        }
+    fun increasePlayerSlotLock(instanceId: UUID, playerSlotId: UUID) {
+        val until = Instant.now().plus(PlayerSlot.PLAYER_SLOT_LOCK_DURATION)
+        playerSlotRepository.lockUntil(instanceId, playerSlotId, until)
+        logger.info("Increasing player slot lock for instance $instanceId and player slot $playerSlotId until $until")
     }
 
-    // TODO
     @Transactional
-    fun decreasePlayerSlotReference(instanceId: UUID, playerSlotId: UUID) {
-        gameInstanceRepository.findById(instanceId).ifPresent { gameInstance ->
-            logger.info("Decreasing player slot reference for instance $instanceId and player slot $playerSlotId")
-            val gameDetails = gameProvider.bySlug(gameInstance.gameSlug)
-//            val playerSlots = deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots)
-//            // TODO count references
-//            gameInstanceRepository.save(gameInstance.copy(serializedPlayerSlots = serializePlayerSlots(gameDetails.playerIdSerializer, playerSlots)))
-        }
+    fun removePlayerSlotLock(instanceId: UUID, playerSlotId: UUID) {
+        playerSlotRepository.removeLock(instanceId, playerSlotId)
+        logger.info("Removed player slot lock for instance $instanceId and player slot $playerSlotId")
     }
 
     private fun <S : GameState<S>> serializeGameState(stateSerializer: KSerializer<S>, state: S): String =
@@ -231,15 +230,6 @@ class GameInstanceProvider(
 
     private fun <S : GameState<S>> deserializeGameState(stateSerializer: KSerializer<S>, serializedState: String): S =
         serializer.decodeFromString(stateSerializer, serializedState)
-
-    private fun <PID : PlayerId> serializePlayerSlots(playerIdSerializer: KSerializer<PID>, playerSlots: Map<UUID, PID>): String =
-        serializer.encodeToString(playerSlotSerializer(playerIdSerializer), playerSlots.mapKeys { it.key.toString() })
-
-    private fun <PID : PlayerId> deserializePlayerSlots(playerIdSerializer: KSerializer<PID>, serializedState: String): Map<UUID, PID> =
-        serializer.decodeFromString(playerSlotSerializer(playerIdSerializer), serializedState).mapKeys { UUID.fromString(it.key) }
-
-    private fun <PID> playerSlotSerializer(playerIdSerializer: KSerializer<PID>): KSerializer<Map<String, PID>> =
-        MapSerializer(String.serializer(), playerIdSerializer)
 
     companion object : KLogging()
 }
