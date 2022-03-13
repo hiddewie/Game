@@ -3,9 +3,9 @@ package nl.hiddewieringa.game.server.controller
 import kotlinx.serialization.json.Json
 import nl.hiddewieringa.game.core.GameParameters
 import nl.hiddewieringa.game.server.games.GameDetails
-import nl.hiddewieringa.game.server.games.GameInstance
 import nl.hiddewieringa.game.server.games.GameInstanceProvider
 import nl.hiddewieringa.game.server.games.GameProvider
+import nl.hiddewieringa.game.server.games.OpenGame
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
@@ -23,22 +23,9 @@ class HomeController(
         gameProvider.games()
             .map { GameListItem(it.slug, it.name, it.description) }
 
-    data class OpenGamePlayerSlot(val id: UUID, val name: String)
-    data class OpenGame(val id: UUID, val playerSlotIds: List<OpenGamePlayerSlot>)
-
     @GetMapping("games/{gameSlug}/open")
     fun openGames(@PathVariable gameSlug: String): List<OpenGame> =
         gameInstanceProvider.openGames(gameSlug)
-            .map(::generateOpenGames)
-
-    private fun generateOpenGames(gameInstance: GameInstance<*, *>) =
-        OpenGame(
-            gameInstance.id,
-            gameInstance.playerSlots
-                    // TODO only open slots
-//                .filterValues { it.referenceCount.get() == 0 }
-                .map { (key, value) -> OpenGamePlayerSlot(key, value.toString()) }
-        )
 
     @PostMapping("games/{gameSlug}/start")
     suspend fun startGame(@PathVariable gameSlug: String, @RequestBody parameters: String): UUID =

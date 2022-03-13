@@ -25,6 +25,9 @@ sealed class GameStateRequest<S : GameState<S>>
 data class UpdateState<S : GameState<S>>(val state: S) : GameStateRequest<S>()
 data class GetState<S : GameState<S>>(val response: CompletableDeferred<S>) : GameStateRequest<S>()
 
+data class OpenGame(val id: UUID, val playerSlotIds: List<OpenGamePlayerSlot>)
+data class OpenGamePlayerSlot(val id: UUID, val name: String)
+
 @Component
 class GameInstanceProvider(
     private val gameEvents: GameEvents,
@@ -149,21 +152,32 @@ class GameInstanceProvider(
 
     // TODO dont hydrate state
     @Transactional
-    fun openGames(gameSlug: String): List<GameInstance<*, *>> =
+    fun openGames(gameSlug: String): List<OpenGame> =
         gameInstanceRepository.openGames(gameSlug)
-            .map(::hydrateGameInstance)
+            .map(::hydrateOpenGame)
 
     private fun hydrateGameInstance(gameInstance: nl.hiddewieringa.game.server.data.GameInstance): GameInstance<*, *> =
         hydrateGameInstance(gameInstance, gameProvider.bySlug(gameInstance.gameSlug))
 
-    private fun <S : GameState<S>> hydrateGameInstance(gameInstance: nl.hiddewieringa.game.server.data.GameInstance, gameDetails: GameDetails<*, *, *, *, *, *, S, *>): GameInstance<*, *> {
-        return GameInstance(
+    private fun hydrateOpenGame(gameInstance: nl.hiddewieringa.game.server.data.GameInstance): OpenGame =
+        hydrateOpenGame(gameInstance, gameProvider.bySlug(gameInstance.gameSlug))
+
+    private fun <S : GameState<S>> hydrateGameInstance(gameInstance: nl.hiddewieringa.game.server.data.GameInstance, gameDetails: GameDetails<*, *, *, *, *, *, S, *>): GameInstance<*, *> =
+         GameInstance(
             gameInstance.id,
             gameDetails.slug,
             deserializeGameState(gameDetails.stateSerializer, gameInstance.serializedState),
             deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots),
         )
-    }
+
+    private fun <S : GameState<S>> hydrateOpenGame(gameInstance: nl.hiddewieringa.game.server.data.GameInstance, gameDetails: GameDetails<*, *, *, *, *, *, S, *>): OpenGame =
+        OpenGame(
+            gameInstance.id,
+            deserializePlayerSlots(gameDetails.playerIdSerializer, gameInstance.serializedPlayerSlots)
+                // TODO only open slots
+//                .filterValues { it.referenceCount.get() == 0 }
+                .map { (key, value) -> OpenGamePlayerSlot(key, value.toString()) }
+        )
 
     @Transactional
     fun <A : PlayerActions, E : Event, PID : PlayerId, S : GameState<S>, PS: Any> applyPlayerAction(instanceId: UUID, playerId: PID, action: A) {
