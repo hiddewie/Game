@@ -11,11 +11,11 @@ class SerializationTest {
 
     @Test
     fun state() {
-        val json = Json { }
+        val json = Json.Default
         val serialized = json.encodeToString(
             TicTacToePlayerState(
                 TwoPlayerId.PLAYER1,
-                arrayOf(arrayOf(Circle, Cross, null), arrayOfNulls(3), arrayOfNulls(3)),
+                listOf(listOf(Circle, Cross, null), listOf(null, null, null), listOf(null, null, null)),
                 TwoPlayerId.PLAYER2,
                 false
             )

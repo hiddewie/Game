@@ -13,7 +13,7 @@ class SerializationTest {
 
     @Test
     fun state() {
-        val json = Json { }
+        val json = Json.Default
         val state = TaiPan(TaiPanGameParameters(0, 0))
             .toPlayerState(TwoTeamPlayerId.PLAYER1)
         val serialized = json.encodeToString(state)
@@ -27,7 +27,7 @@ class SerializationTest {
 
     @Test
     fun card() {
-        val json = Json { }
+        val json = Json.Default
         val serialized = json.encodeToString(NumberedCard(Suit.CLUBS, 3))
         assertEquals("""{"points":0,"suit":"CLUBS","value":3}""", serialized)
     }
